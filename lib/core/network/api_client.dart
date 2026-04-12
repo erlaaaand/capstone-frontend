@@ -32,40 +32,16 @@ class ApiClient {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
       },
-      // FIX [CRITICAL]: Hanya terima response 2xx sebagai sukses.
-      //
-      // SEBELUM (bermasalah):
-      //   validateStatus: (status) => status != null && status < 500
-      //
-      //   Dengan ini, Dio menganggap SEMUA response < 500 sebagai sukses —
-      //   termasuk 401, 403, 404, 422, 429. Akibatnya:
-      //   1. DioException TIDAK dilempar untuk response 4xx
-      //   2. ErrorInterceptor.onError TIDAK pernah dipanggil untuk 4xx
-      //   3. AuthInterceptor.onError TIDAK pernah dipanggil untuk 401
-      //      → mekanisme auto-logout tidak bekerja
-      //   4. Repository menerima Response{statusCode: 401, data: {message: "..."}}
-      //      sebagai response "sukses" dan mencoba parse body error sebagai
-      //      data domain (UserResponseDto, PredictionResponseDto, dll)
-      //      → parse gagal atau menghasilkan data kosong
-      //   5. Profil tidak bisa di-load, prediksi tidak tampil
-      //
-      // SESUDAH (benar):
-      //   validateStatus: (status) => status != null && status >= 200 && status < 300
-      //
-      //   Hanya 2xx yang dianggap sukses. Response 4xx dan 5xx akan
-      //   melempar DioException, sehingga:
-      //   - ErrorInterceptor.onError bekerja → konversi ke ServerException
-      //   - AuthInterceptor.onError bekerja → auto-logout saat 401
-      //   - Repository menerima exception yang benar → Failure yang tepat ke UI
-      validateStatus: (status) => status != null && status >= 200 && status < 300,
+      // Jangan throw error pada status 4xx/5xx — ErrorInterceptor yang handle
+      validateStatus: (status) => status != null && status < 500,
     );
 
     final dio = Dio(options);
 
     // Urutan interceptor penting:
-    // 1. Auth  → tambah token ke header, handle 401 auto-logout
-    // 2. Error → konversi response error ke exception yang spesifik
-    // 3. Logger (hanya dev) → log request/response untuk debugging
+    // 1. Auth  → tambah token ke header
+    // 2. Error → konversi response error ke exception
+    // 3. Logger (hanya dev)
     dio.interceptors.addAll([
       authInterceptor,
       ErrorInterceptor(),
