@@ -1,146 +1,239 @@
+import 'package:flutter/material.dart';
 import 'package:mobile_app/core/theme/app_colors.dart';
 import 'package:mobile_app/core/theme/app_dimensions.dart';
 import 'package:mobile_app/core/theme/app_text_styles.dart';
-import 'package:mobile_app/core/utils/date_formatter.dart';
-import 'package:flutter/material.dart';
 
-/// Header halaman profil — avatar inisial, nama, email, dan tanggal bergabung.
+/// Widget header profil.
+///
+/// Menampilkan:
+/// - Avatar dengan inisial nama user ([_AvatarCircle])
+/// - Nama lengkap atau email sebagai fallback
+/// - Alamat email
+/// - Badge status akun (aktif / tidak aktif)
+/// - Tanggal bergabung
+///
+/// Semua data bersifat read-only; tidak ada interaksi di widget ini.
 class ProfileHeader extends StatelessWidget {
   const ProfileHeader({
     super.key,
     required this.email,
+    required this.createdAt,
+    required this.isActive,
     this.fullName,
-    this.createdAt,
-    this.isActive = true,
   });
 
   final String email;
   final String? fullName;
-  final String? createdAt;
   final bool isActive;
+  final String createdAt;
 
+  /// Nama tampilan: fullName jika ada, fallback ke bagian email sebelum @.
+  String get _displayName =>
+      fullName?.trim().isNotEmpty == true ? fullName! : email.split('@').first;
+
+  /// Inisial untuk avatar — maks 2 karakter.
   String get _initials {
     final name = fullName?.trim();
     if (name == null || name.isEmpty) {
       return email.isNotEmpty ? email[0].toUpperCase() : '?';
     }
-    final parts = name.split(' ');
+    final parts = name.split(' ').where((w) => w.isNotEmpty).toList();
     if (parts.length >= 2) {
       return '${parts.first[0]}${parts.last[0]}'.toUpperCase();
     }
     return parts.first[0].toUpperCase();
   }
 
+  /// Format tanggal ISO 8601 menjadi tampilan yang lebih ramah.
+  String _formatDate(String isoDate) {
+    try {
+      final dt = DateTime.parse(isoDate).toLocal();
+      const months = [
+        'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
+        'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des',
+      ];
+      return '${dt.day} ${months[dt.month - 1]} ${dt.year}';
+    } catch (_) {
+      return isoDate;
+    }
+  }
+
   @override
-  Widget build(BuildContext context) => Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(
-          vertical: AppDimensions.xl,
-          horizontal: AppDimensions.lg,
-        ),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [AppColors.primary, AppColors.primaryDark],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppDimensions.lg),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
-          borderRadius: BorderRadius.circular(AppDimensions.radiusXl),
-        ),
-        child: Column(
-          children: [
-            // Avatar inisial
-            Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                color: AppColors.white.withOpacity(0.25),
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: AppColors.white.withOpacity(0.5),
-                  width: 2,
-                ),
-              ),
-              child: Center(
-                child: Text(
-                  _initials,
-                  style: AppTextStyles.headlineLarge.copyWith(
-                    color: AppColors.white,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: AppDimensions.md),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // ── Avatar ──────────────────────────────────────────────────
+          _AvatarCircle(initials: _initials, isActive: isActive),
+          const SizedBox(height: AppDimensions.md),
 
-            // Nama
-            Text(
-              fullName ?? 'Pengguna',
-              style: AppTextStyles.headlineSmall.copyWith(
-                color: AppColors.white,
-              ),
-              textAlign: TextAlign.center,
-            ),
+          // ── Nama ────────────────────────────────────────────────────
+          Text(
+            _displayName,
+            style: AppTextStyles.headlineSmall,
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: AppDimensions.xs),
 
-            // Email
-            const SizedBox(height: AppDimensions.xs),
-            Text(
-              email,
-              style: AppTextStyles.bodySmall.copyWith(
-                color: AppColors.white.withOpacity(0.8),
-              ),
+          // ── Email ───────────────────────────────────────────────────
+          Text(
+            email,
+            style: AppTextStyles.bodySmall.copyWith(
+              color: AppColors.textSecondary,
             ),
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: AppDimensions.sm),
 
-            // Status + tanggal bergabung
-            if (createdAt != null) ...[
-              const SizedBox(height: AppDimensions.md),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Aktif / nonaktif badge
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppDimensions.sm,
-                      vertical: 3,
-                    ),
-                    decoration: BoxDecoration(
-                      color: isActive
-                          ? AppColors.successLight.withOpacity(0.9)
-                          : AppColors.errorLight.withOpacity(0.9),
-                      borderRadius:
-                          BorderRadius.circular(AppDimensions.radiusFull),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          isActive
-                              ? Icons.verified_outlined
-                              : Icons.block_outlined,
-                          size: 12,
-                          color: isActive ? AppColors.success : AppColors.error,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          isActive ? 'Aktif' : 'Nonaktif',
-                          style: AppTextStyles.labelSmall.copyWith(
-                            color: isActive ? AppColors.success : AppColors.error,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: AppDimensions.sm),
-                  Text(
-                    'Bergabung ${DateFormatter.toDate(createdAt!)}',
-                    style: AppTextStyles.labelSmall.copyWith(
-                      color: AppColors.white.withOpacity(0.7),
-                    ),
-                  ),
-                ],
+          // ── Badge Status ─────────────────────────────────────────────
+          _StatusBadge(isActive: isActive),
+          const SizedBox(height: AppDimensions.sm),
+
+          // ── Tanggal Bergabung ────────────────────────────────────────
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(
+                Icons.calendar_today_outlined,
+                size: AppDimensions.iconSm,
+                color: AppColors.textHint,
+              ),
+              const SizedBox(width: AppDimensions.xs),
+              Text(
+                'Bergabung ${_formatDate(createdAt)}',
+                style: AppTextStyles.labelMedium,
               ),
             ],
-          ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// _AvatarCircle — lingkaran avatar dengan inisial dan indikator status
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _AvatarCircle extends StatelessWidget {
+  const _AvatarCircle({
+    required this.initials,
+    required this.isActive,
+  });
+
+  final String initials;
+  final bool isActive;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        // Lingkaran utama avatar
+        Container(
+          width: 88,
+          height: 88,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: const LinearGradient(
+              colors: [AppColors.primary, AppColors.primaryDark],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primary.withOpacity(0.35),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          alignment: Alignment.center,
+          child: Text(
+            initials,
+            style: const TextStyle(
+              fontSize: 32,
+              fontWeight: FontWeight.w700,
+              color: AppColors.white,
+              height: 1,
+            ),
+          ),
         ),
-      );
+
+        // Indikator online/offline di pojok kanan bawah
+        Positioned(
+          right: 2,
+          bottom: 2,
+          child: Container(
+            width: 18,
+            height: 18,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: isActive ? AppColors.success : AppColors.error,
+              border: Border.all(color: AppColors.white, width: 2.5),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// _StatusBadge — pill badge status akun
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _StatusBadge extends StatelessWidget {
+  const _StatusBadge({required this.isActive});
+
+  final bool isActive;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = isActive ? AppColors.success : AppColors.error;
+    final bgColor = isActive ? AppColors.successLight : AppColors.errorLight;
+    final label = isActive ? 'Akun Aktif' : 'Akun Nonaktif';
+    final icon = isActive ? Icons.verified_rounded : Icons.block_rounded;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppDimensions.sm,
+        vertical: AppDimensions.xs,
+      ),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(AppDimensions.radiusFull),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: AppDimensions.iconSm, color: color),
+          const SizedBox(width: AppDimensions.xs),
+          Text(
+            label,
+            style: AppTextStyles.labelMedium.copyWith(color: color),
+          ),
+        ],
+      ),
+    );
+  }
 }
