@@ -34,12 +34,27 @@ class ApiEndpoints {
       '/storage/$encodedFileKey';
 
   // ── Predictions ──────────────────────────────────────────────────────────
-  // POST   /predictions        → Buat prediksi baru (status awal: PENDING)
-  // GET    /predictions        → List prediksi milik user (paginated)
-  // GET    /predictions/:id    → Detail prediksi (untuk polling)
-  // DELETE /predictions/:id    → Hapus prediksi
+  // POST   /predictions           → Buat prediksi baru (status awal: PENDING)
+  // GET    /predictions/user/me   → List prediksi milik user (paginated)
+  // GET    /predictions/:id       → Detail prediksi (untuk polling)
 
-  static const String predictions = '/predictions';
+  /// POST /predictions — buat prediksi baru.
+  /// Body: { imageUrl: string }
+  static const String predictionsCreate = '/predictions';
+
+  /// GET /predictions/user/me — list prediksi milik user yang sedang login.
+  ///
+  /// FIX: Sebelumnya Flutter menggunakan '/predictions' (GET) yang TIDAK ADA
+  /// di backend. Backend melayani list prediksi di '/predictions/user/me'.
+  ///
+  /// Backend controller:
+  ///   @Get('user/me')
+  ///   getAllByUser(@CurrentUser('sub') authenticatedUserId: string, ...)
+  ///
+  /// Query params: ?page=1&limit=10
+  static const String predictionsUserMe = '/predictions/user/me';
+
+  /// GET /predictions/:id — detail prediksi untuk polling status.
   static String predictionById(String id) => '/predictions/$id';
 
   // ── AI Health ────────────────────────────────────────────────────────────
