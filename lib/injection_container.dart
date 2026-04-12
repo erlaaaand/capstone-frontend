@@ -5,7 +5,25 @@ import 'package:mobile_app/core/network/network_info.dart';
 import 'package:mobile_app/core/router/app_router.dart';
 import 'package:mobile_app/core/router/route_guard.dart';
 import 'package:mobile_app/core/storage/secure_storage_service.dart';
+import 'package:mobile_app/features/auth/application/auth_bloc.dart';
+import 'package:mobile_app/features/auth/domain/repositories/auth_repository.dart';
+import 'package:mobile_app/features/auth/domain/use_cases/get_auth_me_use_case.dart';
+import 'package:mobile_app/features/auth/domain/use_cases/log_out_use_case.dart';
+import 'package:mobile_app/features/auth/domain/use_cases/login_use_case.dart';
+import 'package:mobile_app/features/auth/domain/use_cases/register_use_case.dart';
+import 'package:mobile_app/features/auth/infrastructure/data_sources/auth_local_data_source.dart';
+import 'package:mobile_app/features/auth/infrastructure/data_sources/auth_remote_data_source.dart';
+import 'package:mobile_app/features/auth/infrastructure/repositories/auth_repository_impl.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:mobile_app/features/prediction/application/create_prediction/create_prediction_bloc.dart';
+import 'package:mobile_app/features/prediction/application/prediction_list/prediction_list_bloc.dart';
+import 'package:mobile_app/features/prediction/domain/repositories/prediction_repository.dart';
+import 'package:mobile_app/features/prediction/domain/use_cases/create_prediction_use_case.dart';
+import 'package:mobile_app/features/prediction/domain/use_cases/delete_prediction_use_case.dart';
+import 'package:mobile_app/features/prediction/domain/use_cases/get_prediction_by_id_use_case.dart';
+import 'package:mobile_app/features/prediction/domain/use_cases/get_predictions_use_case.dart';
+import 'package:mobile_app/features/prediction/infrastructure/data_sources/prediction_remote_data_source.dart';
+import 'package:mobile_app/features/prediction/infrastructure/repositories/prediction_repository_impl.dart';
 import 'package:get_it/get_it.dart';
 
 /// Service Locator global.
@@ -20,11 +38,10 @@ final sl = GetIt.instance;
 /// ```
 Future<void> initDependencies() async {
   await _registerCore();
-  // Feature dependencies didaftarkan di sini setelah dibangun:
-  // await _registerAuth();
+  await _registerAuth();
+  await _registerPrediction();
   // await _registerUser();
   // await _registerStorage();
-  // await _registerPrediction();
   // await _registerAiHealth();
 }
 
@@ -43,16 +60,13 @@ Future<void> _registerCore() async {
   );
 
   // ── Network ───────────────────────────────────────────────────────────────
-  // AuthInterceptor butuh callback onUnauthorized yang akan di-set
-  // setelah router siap. Gunakan late binding via setter.
   sl.registerLazySingleton(
     () => AuthInterceptor(
       secureStorage: sl<SecureStorageService>(),
-      // Router belum ada saat ini, akan di-update via AppRouter.
-      // Di production gunakan navigatorKey atau event bus.
       onUnauthorized: () {
-        // Placeholder — di-override setelah AppRouter tersedia.
-        // Lihat App.dart untuk setup lengkap.
+        // Dipanggil ketika token expired / 401.
+        // AppRouter akan handle navigasi ke login via GoRouter redirect.
+        sl<SecureStorageService>().clearAll();
       },
     ),
   );
@@ -73,34 +87,86 @@ Future<void> _registerCore() async {
   );
 }
 
+Future<void> _registerAuth() async {
+  // ── Data Sources ─────────────────────────────────────────────────────────
+  sl.registerLazySingleton<AuthRemoteDataSource>(
+    () => AuthRemoteDataSourceImpl(sl<ApiClient>()),
+  );
+  sl.registerLazySingleton<AuthLocalDataSource>(
+    () => AuthLocalDataSourceImpl(sl<SecureStorageService>()),
+  );
+
+  // ── Repository ────────────────────────────────────────────────────────────
+  sl.registerLazySingleton<AuthRepository>(
+    () => AuthRepositoryImpl(
+      remoteDataSource: sl<AuthRemoteDataSource>(),
+      localDataSource: sl<AuthLocalDataSource>(),
+      networkInfo: sl<NetworkInfo>(),
+    ),
+  );
+
+  // ── Use Cases ─────────────────────────────────────────────────────────────
+  sl.registerLazySingleton(() => LoginUseCase(sl<AuthRepository>()));
+  sl.registerLazySingleton(() => RegisterUseCase(sl<AuthRepository>()));
+  sl.registerLazySingleton(() => GetAuthMeUseCase(sl<AuthRepository>()));
+  sl.registerLazySingleton(() => LogoutUseCase(sl<AuthRepository>()));
+
+  // ── Bloc ──────────────────────────────────────────────────────────────────
+  // registerFactory agar setiap widget yang membutuhkan AuthBloc
+  // mendapat instance baru (tidak share state antar tree yang berbeda).
+  sl.registerFactory(
+    () => AuthBloc(
+      loginUseCase: sl<LoginUseCase>(),
+      registerUseCase: sl<RegisterUseCase>(),
+      getAuthMeUseCase: sl<GetAuthMeUseCase>(),
+      logoutUseCase: sl<LogoutUseCase>(),
+    ),
+  );
+}
+
+Future<void> _registerPrediction() async {
+  // ── Data Sources ─────────────────────────────────────────────────────────
+  sl.registerLazySingleton<PredictionRemoteDataSource>(
+    () => PredictionRemoteDataSourceImpl(sl<ApiClient>()),
+  );
+
+  // ── Repository ────────────────────────────────────────────────────────────
+  sl.registerLazySingleton<PredictionRepository>(
+    () => PredictionRepositoryImpl(sl<PredictionRemoteDataSource>()),
+  );
+
+  // ── Use Cases ─────────────────────────────────────────────────────────────
+  sl.registerLazySingleton(
+    () => CreatePredictionUseCase(sl<PredictionRepository>()),
+  );
+  sl.registerLazySingleton(
+    () => GetPredictionByIdUseCase(sl<PredictionRepository>()),
+  );
+  sl.registerLazySingleton(
+    () => GetPredictionsUseCase(sl<PredictionRepository>()),
+  );
+  sl.registerLazySingleton(
+    () => DeletePredictionUseCase(sl<PredictionRepository>()),
+  );
+
+  // ── BLoC ──────────────────────────────────────────────────────────────────
+  // registerFactory agar setiap halaman mendapat instance baru.
+  sl.registerFactory(
+    () => CreatePredictionBloc(
+      createPredictionUseCase: sl<CreatePredictionUseCase>(),
+      getPredictionByIdUseCase: sl<GetPredictionByIdUseCase>(),
+    ),
+  );
+  sl.registerFactory(
+    () => PredictionListBloc(
+      getPredictionsUseCase: sl<GetPredictionsUseCase>(),
+      deletePredictionUseCase: sl<DeletePredictionUseCase>(),
+    ),
+  );
+}
+
 // ── Feature registrations (uncomment saat feature dibangun) ─────────────────
 //
-// Future<void> _registerAuth() async {
-//   // Data Sources
-//   sl.registerLazySingleton<AuthRemoteDataSource>(
-//     () => AuthRemoteDataSourceImpl(sl<ApiClient>()),
-//   );
-//   sl.registerLazySingleton<AuthLocalDataSource>(
-//     () => AuthLocalDataSourceImpl(sl<SecureStorageService>()),
-//   );
-//   // Repository
-//   sl.registerLazySingleton<AuthRepository>(
-//     () => AuthRepositoryImpl(
-//       remoteDataSource: sl<AuthRemoteDataSource>(),
-//       localDataSource: sl<AuthLocalDataSource>(),
-//       networkInfo: sl<NetworkInfo>(),
-//     ),
-//   );
-//   // Use Cases
-//   sl.registerLazySingleton(() => LoginUseCase(sl<AuthRepository>()));
-//   sl.registerLazySingleton(() => RegisterUseCase(sl<AuthRepository>()));
-//   sl.registerLazySingleton(() => GetAuthMeUseCase(sl<AuthRepository>()));
-//   // Bloc
-//   sl.registerFactory(
-//     () => AuthBloc(
-//       loginUseCase: sl<LoginUseCase>(),
-//       registerUseCase: sl<RegisterUseCase>(),
-//       getAuthMeUseCase: sl<GetAuthMeUseCase>(),
-//     ),
-//   );
-// }
+// Future<void> _registerUser() async { ... }
+// Future<void> _registerStorage() async { ... }
+// Future<void> _registerAiHealth() async { ... }
