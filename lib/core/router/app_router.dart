@@ -1,15 +1,18 @@
 import 'package:mobile_app/core/router/route_guard.dart';
 import 'package:mobile_app/core/router/route_names.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-
-// ── Page imports (akan diisi saat feature dibangun) ─────────────────────────
+import 'package:mobile_app/features/prediction/application/create_prediction/create_prediction_bloc.dart';
+import 'package:mobile_app/features/prediction/application/prediction_list/prediction_list_bloc.dart';
+import 'package:mobile_app/features/prediction/domain/entities/prediction.dart';
+import 'package:mobile_app/features/prediction/presentation/pages/prediction_history_page.dart';
+import 'package:mobile_app/features/prediction/presentation/pages/prediction_result_page.dart';
+import 'package:mobile_app/features/prediction/presentation/pages/scan_page.dart';
+import 'package:mobile_app/injection_container.dart';
 // import 'package:mobile_app/features/auth/presentation/pages/splash_page.dart';
 // import 'package:mobile_app/features/auth/presentation/pages/login_page.dart';
 // import 'package:mobile_app/features/auth/presentation/pages/register_page.dart';
-// import 'package:mobile_app/features/prediction/presentation/pages/scan_page.dart';
-// import 'package:mobile_app/features/prediction/presentation/pages/prediction_result_page.dart';
-// import 'package:mobile_app/features/prediction/presentation/pages/prediction_history_page.dart';
 // import 'package:mobile_app/features/user/presentation/pages/profile_page.dart';
 
 /// Konfigurasi navigasi aplikasi menggunakan [GoRouter].
@@ -53,15 +56,21 @@ class AppRouter {
           GoRoute(
             path: RoutePaths.scan,
             name: RouteNames.scan,
-            builder: (context, state) =>
-                const _PlaceholderPage(label: 'Scan'),
+            builder: (context, state) => BlocProvider(
+              create: (_) => sl<CreatePredictionBloc>(),
+              child: const ScanPage(),
+            ),
             routes: [
               GoRoute(
                 path: 'result/:predictionId',
                 name: RouteNames.predictionResult,
                 builder: (context, state) {
                   final id = state.pathParameters['predictionId'] ?? '';
-                  return _PlaceholderPage(label: 'Result ($id)');
+                  final prediction = state.extra as Prediction?;
+                  return PredictionResultPage(
+                    predictionId: id,
+                    prediction: prediction,
+                  );
                 },
               ),
             ],
@@ -71,8 +80,10 @@ class AppRouter {
           GoRoute(
             path: RoutePaths.predictionHistory,
             name: RouteNames.predictionHistory,
-            builder: (context, state) =>
-                const _PlaceholderPage(label: 'History'),
+            builder: (context, state) => BlocProvider(
+              create: (_) => sl<PredictionListBloc>(),
+              child: const PredictionHistoryPage(),
+            ),
           ),
 
           // Profile
