@@ -77,8 +77,7 @@ class CreatePredictionBloc
           } else {
             emit(CreatePredictionFailure(
               PredictionFailedFailure(
-                message: prediction.errorMessage ??
-                    'AI gagal memproses gambar.',
+                message: _getFriendlyErrorMessage(prediction.errorMessage),
               ),
             ));
           }
@@ -138,8 +137,7 @@ class CreatePredictionBloc
           _cancelPolling();
           emit(CreatePredictionFailure(
             PredictionFailedFailure(
-              message: prediction.errorMessage ??
-                  'AI gagal memproses gambar.',
+              message: _getFriendlyErrorMessage(prediction.errorMessage),
             ),
           ));
         }
@@ -177,16 +175,18 @@ class CreatePredictionBloc
 
   // ── Helper ─────────────────────────────────────────────────────────────────
 
+  /// Menerjemahkan pesan error mentah dari backend menjadi pesan UI yang ramah.
   String _getFriendlyErrorMessage(String? rawMessage) {
     if (rawMessage == null) return 'AI gagal memproses gambar.';
     
-    // Tangkap keyword error dari backend dan ubah pesannya
-    if (rawMessage.toLowerCase().contains('bukan gambar buah durian') || 
-        rawMessage.toLowerCase().contains('ditolak')) {
-      return 'Maaf, ini bukan durian.'; // 👈 Pesan singkat yang kamu inginkan
+    final lowerCaseMessage = rawMessage.toLowerCase();
+    
+    // Tangkap error jika ditolak AI karena bukan durian
+    if (lowerCaseMessage.contains('bukan gambar buah durian') || 
+        lowerCaseMessage.contains('ditolak')) {
+      return 'Maaf, ini bukan durian.';
     }
     
-    // Jika ada error lain, tampilkan apa adanya
     return rawMessage;
   }
 }

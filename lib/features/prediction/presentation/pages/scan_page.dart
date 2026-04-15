@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobile_app/core/error/failures.dart'; // Tambahan import Failure
 import 'package:mobile_app/core/router/route_names.dart';
 import 'package:mobile_app/core/theme/app_colors.dart';
 import 'package:mobile_app/core/theme/app_dimensions.dart';
@@ -68,7 +69,11 @@ class _ScanPageState extends State<ScanPage> {
 
   void _listener(BuildContext context, CreatePredictionState state) {
     if (state is CreatePredictionFailure) {
-      AppSnackBar.showError(context, state.failure.message);
+      // HANYA tampilkan SnackBar jika errornya BUKAN karena penolakan AI.
+      // Jika AI menolak gambar (PredictionFailedFailure), pesan akan tampil secara elegan di tengah UI.
+      if (state.failure is! PredictionFailedFailure) {
+        AppSnackBar.showError(context, state.failure.message);
+      }
     }
     if (state is CreatePredictionSuccess) {
       context.goNamed(

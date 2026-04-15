@@ -1,25 +1,4 @@
 /// Model JSON untuk satu prediksi dari API NestJS.
-///
-/// Sesuai response body endpoint:
-/// - `GET  /predictions/:id`
-/// - `POST /predictions`
-///
-/// Format JSON:
-/// ```json
-/// {
-///   "id": "uuid",
-///   "userId": "uuid",
-///   "imageUrl": "https://...",
-///   "fileKey": "predictions/userId/abc.jpg",
-///   "status": "PENDING|SUCCESS|FAILED",
-///   "predictedClass": "D197",
-///   "confidence": 0.9231,
-///   "allScores": { "D101": 0.01, "D197": 0.9231, ... },
-///   "errorMessage": null,
-///   "createdAt": "2024-01-01T00:00:00.000Z",
-///   "updatedAt": "2024-01-01T00:00:00.000Z"
-/// }
-/// ```
 class PredictionResponseModel {
   const PredictionResponseModel({
     required this.id,
@@ -45,20 +24,30 @@ class PredictionResponseModel {
       );
     }
 
+    // Fungsi bantuan untuk mem-parsing confidence yang mungkin berupa String atau Double
+    double? parseConfidence(dynamic value) {
+      if (value == null) return null;
+      if (value is num) return value.toDouble();
+      if (value is String) return double.tryParse(value);
+      return null;
+    }
+
     return PredictionResponseModel(
       id: json['id'] as String,
       userId: json['userId'] as String,
       imageUrl: json['imageUrl'] as String,
-      fileKey: json['fileKey'] as String,
+      // Berikan nilai default string kosong jika fileKey tidak dikirim backend
+      fileKey: json['fileKey'] as String? ?? '', 
       status: json['status'] as String,
-      predictedClass: json['predictedClass'] as String?,
-      confidence: json['confidence'] != null
-          ? (json['confidence'] as num).toDouble()
-          : null,
+      // Backend menggunakan key 'varietyCode' sebagai ganti 'predictedClass'
+      predictedClass: json['varietyCode'] as String? ?? json['predictedClass'] as String?,
+      // Backend menggunakan key 'confidenceScore' (String) sebagai ganti 'confidence'
+      confidence: parseConfidence(json['confidenceScore'] ?? json['confidence']),
       allScores: allScores,
       errorMessage: json['errorMessage'] as String?,
       createdAt: json['createdAt'] as String,
-      updatedAt: json['updatedAt'] as String,
+      // Jika updatedAt tidak dikirim backend, gunakan nilai createdAt sebagai fallback
+      updatedAt: json['updatedAt'] as String? ?? json['createdAt'] as String,
     );
   }
 
