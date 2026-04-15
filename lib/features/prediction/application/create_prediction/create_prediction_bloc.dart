@@ -174,4 +174,19 @@ class CreatePredictionBloc
     _pollTimer?.cancel();
     _pollTimer = null;
   }
+
+  // ── Helper ─────────────────────────────────────────────────────────────────
+
+  String _getFriendlyErrorMessage(String? rawMessage) {
+    if (rawMessage == null) return 'AI gagal memproses gambar.';
+    
+    // Tangkap keyword error dari backend dan ubah pesannya
+    if (rawMessage.toLowerCase().contains('bukan gambar buah durian') || 
+        rawMessage.toLowerCase().contains('ditolak')) {
+      return 'Maaf, ini bukan durian.'; // 👈 Pesan singkat yang kamu inginkan
+    }
+    
+    // Jika ada error lain, tampilkan apa adanya
+    return rawMessage;
+  }
 }

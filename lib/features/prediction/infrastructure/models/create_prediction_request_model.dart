@@ -12,17 +12,17 @@
 class CreatePredictionRequestModel {
   const CreatePredictionRequestModel({
     required this.imageUrl,
-    required this.fileKey,
+    // required this.fileKey,
   });
 
   /// URL publik gambar hasil upload.
   final String imageUrl;
 
   /// Key file di storage (digunakan backend untuk referensi).
-  final String fileKey;
+  // final String fileKey;
 
   Map<String, dynamic> toJson() => {
         'imageUrl': imageUrl,
-        'fileKey': fileKey,
+        // 'fileKey': fileKey,
       };
 }

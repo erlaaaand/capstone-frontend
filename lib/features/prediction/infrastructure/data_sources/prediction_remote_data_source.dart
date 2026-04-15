@@ -56,6 +56,7 @@ class PredictionRemoteDataSourceImpl implements PredictionRemoteDataSource {
         filename: fileName,
         contentType: MediaType.parse(mimeType),
       ),
+      'context': 'predictions',
     });
 
     final response = await _apiClient.postMultipart<Map<String, dynamic>>(

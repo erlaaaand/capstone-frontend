@@ -47,7 +47,7 @@ class PredictionRepositoryImpl implements PredictionRepository {
   }) async {
     try {
       final model = await _dataSource.createPrediction(
-        CreatePredictionRequestModel(imageUrl: imageUrl, fileKey: fileKey),
+        CreatePredictionRequestModel(imageUrl: imageUrl),
       );
       return Right(PredictionMapper.fromModel(model));
     } on DioException catch (e) {

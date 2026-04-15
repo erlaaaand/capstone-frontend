@@ -31,6 +31,7 @@ class AppTextField extends StatelessWidget {
     this.maxLines = 1,
     this.maxLength,
     this.inputFormatters,
+    this.obscureText = false,
   });
 
   final TextEditingController? controller;
@@ -53,6 +54,7 @@ class AppTextField extends StatelessWidget {
   final int? maxLines;
   final int? maxLength;
   final List<TextInputFormatter>? inputFormatters;
+  final bool obscureText;
 
   @override
   Widget build(BuildContext context) => Column(
@@ -65,6 +67,7 @@ class AppTextField extends StatelessWidget {
           TextFormField(
             controller: controller,
             focusNode: focusNode,
+            obscureText: obscureText, // Meneruskan nilai obscureText ke TextFormField
             onChanged: onChanged,
             onEditingComplete: onEditingComplete,
             validator: validator,
@@ -74,7 +77,7 @@ class AppTextField extends StatelessWidget {
             enabled: enabled,
             readOnly: readOnly,
             autofocus: autofocus,
-            maxLines: maxLines,
+            maxLines: obscureText ? 1 : maxLines, // maxLines wajib 1 jika obscureText true
             maxLength: maxLength,
             inputFormatters: inputFormatters,
             style: AppTextStyles.bodyMedium,
@@ -85,8 +88,8 @@ class AppTextField extends StatelessWidget {
               helperMaxLines: 2,
               errorMaxLines: 2,
               prefixIcon: prefixIcon != null
-                  ? Icon(prefixIcon, size: AppDimensions.iconSm + 4,
-                      color: AppColors.textHint)
+                  ? Icon(prefixIcon,
+                      size: AppDimensions.iconSm + 4, color: AppColors.textHint)
                   : null,
               suffixIcon: suffixIcon,
               counterText: '',
@@ -144,6 +147,7 @@ class _AppPasswordFieldState extends State<AppPasswordField> {
         textInputAction: widget.textInputAction,
         autofillHints: widget.autofillHints ?? const [AutofillHints.password],
         focusNode: widget.focusNode,
+        obscureText: _obscure, // Diubah menjadi _obscure (mengikuti state)
         enabled: widget.enabled,
         prefixIcon: Icons.lock_outline_rounded,
         keyboardType: TextInputType.visiblePassword,
@@ -191,7 +195,8 @@ class AppSearchField extends StatelessWidget {
           suffixIcon: controller?.text.isNotEmpty == true
               ? IconButton(
                   icon: const Icon(Icons.close_rounded,
-                      size: AppDimensions.iconSm + 4, color: AppColors.textHint),
+                      size: AppDimensions.iconSm + 4,
+                      color: AppColors.textHint),
                   onPressed: () {
                     controller?.clear();
                     onClear?.call();
