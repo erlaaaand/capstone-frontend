@@ -1,4 +1,4 @@
-/// All path endpoint API NestJS.
+/// Semua path endpoint API NestJS.
 ///
 /// Base URL TIDAK disertakan di sini — ditangani oleh [ApiClient] (Dio).
 /// Gunakan helper method untuk path yang mengandung parameter dinamis.
@@ -9,13 +9,15 @@ class ApiEndpoints {
   // POST  /auth/register  → Register akun baru
   // POST  /auth/login     → Login, dapat JWT
   // GET   /auth/me        → Info user dari JWT aktif
+  // POST  /auth/logout    → Logout (invalidasi sesi lokal)
 
   static const String register = '/auth/register';
   static const String login    = '/auth/login';
   static const String authMe   = '/auth/me';
+  static const String logout   = '/auth/logout';
 
   // ── Users ────────────────────────────────────────────────────────────────
-  // GET   /users/me       → Profil user sendiri (shortcut)
+  // GET   /users/me       → Profil user sendiri (shortcut dari JWT)
   // GET   /users/:id      → Profil berdasarkan UUID
   // PATCH /users/:id      → Update nama / password
 
@@ -34,12 +36,12 @@ class ApiEndpoints {
       '/storage/$encodedFileKey';
 
   // ── Predictions ──────────────────────────────────────────────────────────
-  // POST   /predictions        → Buat prediksi baru (status awal: PENDING)
-  // GET    /predictions        → List prediksi milik user (paginated)
-  // GET    /predictions/:id    → Detail prediksi (untuk polling)
-  // DELETE /predictions/:id    → Hapus prediksi
+  // POST  /predictions          → Buat prediksi baru (status awal: PENDING)
+  // GET   /predictions/user/me  → List prediksi milik user (paginated)
+  // GET   /predictions/:id      → Detail prediksi (untuk polling hasil)
 
-  static const String predictions = '/predictions';
+  static const String predictions   = '/predictions';
+  static const String predictionsMe = '/predictions/user/me';
   static String predictionById(String id) => '/predictions/$id';
 
   // ── AI Health ────────────────────────────────────────────────────────────

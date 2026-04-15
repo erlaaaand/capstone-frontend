@@ -15,9 +15,12 @@ abstract class AppTheme {
           onPrimary: AppColors.white,
           secondary: AppColors.secondary,
           onSecondary: AppColors.white,
-          background: AppColors.background,
+          // 'background' dihapus — deprecated sejak Flutter 3.18.
+          // Gunakan 'surface' yang sudah mencakup keduanya di Material 3.
           surface: AppColors.surface,
+          onSurface: AppColors.textPrimary,
           error: AppColors.error,
+          onError: AppColors.white,
         ),
         scaffoldBackgroundColor: AppColors.background,
 
@@ -39,13 +42,12 @@ abstract class AppTheme {
         // ── Bottom Navigation ────────────────────────────────────────────────
         navigationBarTheme: NavigationBarThemeData(
           backgroundColor: AppColors.surface,
-          indicatorColor: AppColors.primaryLight.withOpacity(0.15),
+          indicatorColor: AppColors.primaryLight.withAlpha(38),
           iconTheme: WidgetStateProperty.resolveWith((states) {
             if (states.contains(WidgetState.selected)) {
               return const IconThemeData(color: AppColors.primary, size: 24);
             }
-            return const IconThemeData(
-                color: AppColors.textHint, size: 24);
+            return const IconThemeData(color: AppColors.textHint, size: 24);
           }),
           labelTextStyle: WidgetStateProperty.resolveWith((states) {
             if (states.contains(WidgetState.selected)) {
@@ -167,19 +169,19 @@ abstract class AppTheme {
 
         // ── Text ──────────────────────────────────────────────────────────────
         textTheme: const TextTheme(
-          displayLarge:  AppTextStyles.displayLarge,
-          displayMedium: AppTextStyles.displayMedium,
-          headlineLarge: AppTextStyles.headlineLarge,
+          displayLarge:   AppTextStyles.displayLarge,
+          displayMedium:  AppTextStyles.displayMedium,
+          headlineLarge:  AppTextStyles.headlineLarge,
           headlineMedium: AppTextStyles.headlineMedium,
-          headlineSmall: AppTextStyles.headlineSmall,
-          titleLarge:   AppTextStyles.titleLarge,
-          titleMedium:  AppTextStyles.titleMedium,
-          bodyLarge:    AppTextStyles.bodyLarge,
-          bodyMedium:   AppTextStyles.bodyMedium,
-          bodySmall:    AppTextStyles.bodySmall,
-          labelLarge:   AppTextStyles.labelLarge,
-          labelMedium:  AppTextStyles.labelMedium,
-          labelSmall:   AppTextStyles.labelSmall,
+          headlineSmall:  AppTextStyles.headlineSmall,
+          titleLarge:     AppTextStyles.titleLarge,
+          titleMedium:    AppTextStyles.titleMedium,
+          bodyLarge:      AppTextStyles.bodyLarge,
+          bodyMedium:     AppTextStyles.bodyMedium,
+          bodySmall:      AppTextStyles.bodySmall,
+          labelLarge:     AppTextStyles.labelLarge,
+          labelMedium:    AppTextStyles.labelMedium,
+          labelSmall:     AppTextStyles.labelSmall,
         ),
       );
 
@@ -194,9 +196,11 @@ abstract class AppTheme {
           onPrimary: AppColors.darkBackground,
           secondary: AppColors.secondaryLight,
           onSecondary: AppColors.darkBackground,
-          background: AppColors.darkBackground,
+          // 'background' dihapus — deprecated sejak Flutter 3.18.
           surface: AppColors.darkSurface,
+          onSurface: Colors.white,
           error: const Color(0xFFEF9A9A),
+          onError: AppColors.darkBackground,
         ),
         appBarTheme: const AppBarTheme(
           backgroundColor: AppColors.darkSurface,

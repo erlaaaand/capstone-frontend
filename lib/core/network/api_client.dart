@@ -32,16 +32,22 @@ class ApiClient {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
       },
-      // Jangan throw error pada status 4xx/5xx — ErrorInterceptor yang handle
-      validateStatus: (status) => status != null && status < 500,
+      // Gunakan perilaku default Dio: throw DioException untuk semua
+      // status non-2xx. ErrorInterceptor.onError akan menangkap 4xx (401,
+      // 403, 404, 409, 422, 429) dan mengonversinya ke exception yang tepat.
+      // AuthInterceptor.onError juga dapat mendeteksi 401 untuk logout otomatis.
+      //
+      // JANGAN set validateStatus ke (status) => status < 500 — ini
+      // menyebabkan 4xx lolos sebagai Response sukses dan melewati
+      // seluruh error handling chain.
     );
 
     final dio = Dio(options);
 
     // Urutan interceptor penting:
-    // 1. Auth  → tambah token ke header
-    // 2. Error → konversi response error ke exception
-    // 3. Logger (hanya dev)
+    // 1. Auth  → tambah token ke header SEBELUM request dikirim
+    // 2. Error → konversi response error 4xx/5xx ke exception spesifik
+    // 3. Logger (hanya dev) → log request + response terakhir
     dio.interceptors.addAll([
       authInterceptor,
       ErrorInterceptor(),
@@ -93,17 +99,22 @@ class ApiClient {
   /// Upload file menggunakan [FormData] (multipart/form-data).
   ///
   /// [onSendProgress] untuk menampilkan progress bar upload.
+  /// Prediction creation endpoint mungkin perlu receiveTimeout lebih panjang
+  /// karena AI processing berjalan async di server — gunakan [options] untuk
+  /// override jika diperlukan per-call.
   Future<Response<T>> postMultipart<T>(
     String path, {
     required FormData formData,
     void Function(int sent, int total)? onSendProgress,
+    Options? options,
   }) =>
       _dio.post<T>(
         path,
         data: formData,
-        options: Options(
-          contentType: 'multipart/form-data',
-        ),
+        options: options ??
+            Options(
+              contentType: 'multipart/form-data',
+            ),
         onSendProgress: onSendProgress,
       );
 
