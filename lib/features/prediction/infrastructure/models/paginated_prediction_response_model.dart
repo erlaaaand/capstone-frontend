@@ -1,19 +1,6 @@
 import 'package:mobile_app/features/prediction/infrastructure/models/prediction_response_model.dart';
 
 /// Model JSON untuk response paginated list prediksi.
-///
-/// Sesuai response NestJS standard pagination:
-/// ```json
-/// {
-///   "data": [ {...}, {...} ],
-///   "meta": {
-///     "page": 1,
-///     "limit": 10,
-///     "total": 50,
-///     "totalPages": 5
-///   }
-/// }
-/// ```
 class PaginatedPredictionResponseModel {
   const PaginatedPredictionResponseModel({
     required this.data,
@@ -23,17 +10,33 @@ class PaginatedPredictionResponseModel {
   factory PaginatedPredictionResponseModel.fromJson(
     Map<String, dynamic> json,
   ) {
-    return PaginatedPredictionResponseModel(
-      data: (json['data'] as List)
-          .map(
-            (item) => PredictionResponseModel.fromJson(
-              item as Map<String, dynamic>,
-            ),
-          )
-          .toList(),
-      meta: PaginationMetaModel.fromJson(
+    // 1. Parsing list data secara aman
+    final rawData = json['data'] as List?;
+    final dataList = rawData?.map(
+          (item) => PredictionResponseModel.fromJson(
+            item as Map<String, dynamic>,
+          ),
+        ).toList() ?? [];
+
+    // 2. Parsing meta secara aman (Berikan fallback jika backend tidak mengirim 'meta')
+    PaginationMetaModel metaData;
+    if (json['meta'] != null && json['meta'] is Map) {
+      metaData = PaginationMetaModel.fromJson(
         json['meta'] as Map<String, dynamic>,
-      ),
+      );
+    } else {
+      // Jika meta tidak dikirim, buat nilai meta buatan (dummy)
+      metaData = PaginationMetaModel(
+        page: 1,
+        limit: dataList.isNotEmpty ? dataList.length : 10,
+        total: dataList.length,
+        totalPages: 1,
+      );
+    }
+
+    return PaginatedPredictionResponseModel(
+      data: dataList,
+      meta: metaData,
     );
   }
 
@@ -41,7 +44,7 @@ class PaginatedPredictionResponseModel {
   final PaginationMetaModel meta;
 }
 
-/// Meta informasi pagination dari NestJS.
+/// Meta informasi pagination.
 class PaginationMetaModel {
   const PaginationMetaModel({
     required this.page,
@@ -52,10 +55,11 @@ class PaginationMetaModel {
 
   factory PaginationMetaModel.fromJson(Map<String, dynamic> json) {
     return PaginationMetaModel(
-      page: json['page'] as int,
-      limit: json['limit'] as int,
-      total: json['total'] as int,
-      totalPages: json['totalPages'] as int,
+      // Tambahkan nilai default (??) untuk setiap key agar kebal terhadap null
+      page: json['page'] as int? ?? 1,
+      limit: json['limit'] as int? ?? 10,
+      total: json['total'] as int? ?? 0,
+      totalPages: json['totalPages'] as int? ?? 1,
     );
   }
 

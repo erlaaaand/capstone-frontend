@@ -3,26 +3,34 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:mobile_app/core/error/failures.dart'; // Tambahan import Failure
+import 'package:mobile_app/core/error/failures.dart';
 import 'package:mobile_app/core/router/route_names.dart';
 import 'package:mobile_app/core/theme/app_colors.dart';
 import 'package:mobile_app/core/theme/app_dimensions.dart';
 import 'package:mobile_app/core/theme/app_text_styles.dart';
+import 'package:mobile_app/core/utils/file_utils.dart';
+import 'package:mobile_app/core/utils/image_hash_utils.dart';
 import 'package:mobile_app/core/widgets/app_button.dart';
 import 'package:mobile_app/core/widgets/app_error_widget.dart';
 import 'package:mobile_app/core/widgets/app_image_picker.dart';
 import 'package:mobile_app/core/widgets/app_snackbar.dart';
+import 'package:mobile_app/features/ai_health/application/ai_health_cubit.dart';
+import 'package:mobile_app/features/ai_health/application/ai_health_state.dart';
+import 'package:mobile_app/features/ai_health/presentation/widgets/ai_status_banner.dart';
+import 'package:mobile_app/features/ai_health/presentation/widgets/ai_status_indicator.dart';
 import 'package:mobile_app/features/prediction/application/create_prediction/create_prediction_bloc.dart';
 import 'package:mobile_app/features/prediction/application/create_prediction/create_prediction_event.dart';
 import 'package:mobile_app/features/prediction/application/create_prediction/create_prediction_state.dart';
 
-/// Halaman utama scan durian.
+/// Halaman utama scan durian — versi upgrade.
 ///
-/// Flow:
-/// 1. User pilih gambar (kamera / galeri)
-/// 2. BLoC upload → processing (polling)
-/// 3. Sukses → navigasi ke [PredictionResultPage]
-/// 4. Gagal → snackbar error + tombol coba lagi
+/// Peningkatan UX:
+/// - AI status banner ditampilkan di atas halaman
+/// - Tombol scan dinonaktifkan jika AI offline
+/// - Dedup check: cegah upload gambar yang sama
+/// - Progress upload lebih informatif (bytes / persentase)
+/// - Pesan error lebih ramah dan actionable
+/// - Metadata file (nama + ukuran) ditampilkan saat gambar dipilih
 class ScanPage extends StatefulWidget {
   const ScanPage({super.key});
 
@@ -32,11 +40,13 @@ class ScanPage extends StatefulWidget {
 
 class _ScanPageState extends State<ScanPage> {
   File? _selectedImage;
-
-  // ── Helpers ────────────────────────────────────────────────────────────────
+  String? _lastUploadedHash;
 
   Future<void> _pickImage() async {
-    final file = await AppImagePickerSheet.show(context);
+    final file = await AppImagePickerSheet.show(
+      context,
+      previousImageHash: _lastUploadedHash,
+    );
     if (file != null && mounted) {
       setState(() => _selectedImage = file);
     }
@@ -44,9 +54,15 @@ class _ScanPageState extends State<ScanPage> {
 
   void _startScan() {
     if (_selectedImage == null) return;
-    context.read<CreatePredictionBloc>().add(
-          CreatePredictionStarted(_selectedImage!),
-        );
+
+    // Simpan hash untuk dedup check berikutnya
+    ImageHashUtils.computeHash(_selectedImage!).then((hash) {
+      _lastUploadedHash = hash;
+    });
+
+    context
+        .read<CreatePredictionBloc>()
+        .add(CreatePredictionStarted(_selectedImage!));
   }
 
   void _reset() {
@@ -54,28 +70,54 @@ class _ScanPageState extends State<ScanPage> {
     context.read<CreatePredictionBloc>().add(const CreatePredictionReset());
   }
 
-  // ── Build ──────────────────────────────────────────────────────────────────
+  bool _isAiReady(BuildContext context) {
+    final aiState = context.read<AiHealthCubit>().state;
+    if (aiState is AiHealthLoaded) return aiState.aiStatus.canScan;
+    return true; // Optimistic: izinkan jika status belum diketahui
+  }
 
   @override
   Widget build(BuildContext context) =>
       BlocConsumer<CreatePredictionBloc, CreatePredictionState>(
         listener: _listener,
         builder: (context, state) => Scaffold(
-          backgroundColor: Theme.of(context).colorScheme.background,
-          appBar: _buildAppBar(state),
-          body: _buildBody(context, state),
+          backgroundColor: Theme.of(context).colorScheme.surface,
+          appBar: _buildAppBar(context, state),
+          body: Column(
+            children: [
+              // AI Status Banner di atas konten
+              BlocBuilder<AiHealthCubit, AiHealthState>(
+                builder: (context, aiState) {
+                  if (aiState is AiHealthLoaded) {
+                    return AiStatusBanner(
+                      isOffline: aiState.showBanner,
+                      message: aiState.aiStatus.displayMessage,
+                      onRetry: () =>
+                          context.read<AiHealthCubit>().fetchCurrentStatus(),
+                    );
+                  }
+                  return const SizedBox.shrink();
+                },
+              ),
+              Expanded(child: _buildBody(context, state)),
+            ],
+          ),
         ),
       );
 
   void _listener(BuildContext context, CreatePredictionState state) {
     if (state is CreatePredictionFailure) {
-      // HANYA tampilkan SnackBar jika errornya BUKAN karena penolakan AI.
-      // Jika AI menolak gambar (PredictionFailedFailure), pesan akan tampil secara elegan di tengah UI.
       if (state.failure is! PredictionFailedFailure) {
         AppSnackBar.showError(context, state.failure.message);
       }
     }
     if (state is CreatePredictionSuccess) {
+      // Simpan hash gambar yang berhasil di-upload
+      if (_selectedImage != null) {
+        ImageHashUtils.computeHash(_selectedImage!).then((hash) {
+          LastImageHashCache.save(hash, state.prediction.id);
+        });
+      }
       context.goNamed(
         RouteNames.predictionResult,
         pathParameters: {'predictionId': state.prediction.id},
@@ -84,12 +126,33 @@ class _ScanPageState extends State<ScanPage> {
     }
   }
 
-  PreferredSizeWidget _buildAppBar(CreatePredictionState state) => AppBar(
+  PreferredSizeWidget _buildAppBar(
+    BuildContext context,
+    CreatePredictionState state,
+  ) =>
+      AppBar(
         title: const Text('Scan Durian'),
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
+          // AI Status Indicator di AppBar
+          BlocBuilder<AiHealthCubit, AiHealthState>(
+            builder: (context, aiState) {
+              if (aiState is AiHealthLoaded) {
+                return Padding(
+                  padding: const EdgeInsets.only(right: AppDimensions.md),
+                  child: Center(
+                    child: AiStatusIndicator(
+                      status: aiState.indicatorValue,
+                      showLabel: false,
+                    ),
+                  ),
+                );
+              }
+              return const SizedBox.shrink();
+            },
+          ),
           if (state is! CreatePredictionInitial)
             TextButton(
               onPressed: _reset,
@@ -103,7 +166,10 @@ class _ScanPageState extends State<ScanPage> {
         CreatePredictionInitial() => _InitialView(
             selectedImage: _selectedImage,
             onPickImage: _pickImage,
-            onStartScan: _selectedImage != null ? _startScan : null,
+            onStartScan: _selectedImage != null && _isAiReady(context)
+                ? _startScan
+                : null,
+            isAiReady: _isAiReady(context),
           ),
         CreatePredictionUploading(:final progress) => _UploadingView(
             selectedImage: _selectedImage,
@@ -122,24 +188,28 @@ class _ScanPageState extends State<ScanPage> {
         CreatePredictionSuccess() => const SizedBox.shrink(),
         CreatePredictionFailure(:final failure) => _FailureView(
             failure: failure,
-            onRetry: _selectedImage != null ? _startScan : null,
+            onRetry: _selectedImage != null && _isAiReady(context)
+                ? _startScan
+                : null,
             onPickNew: _pickImage,
           ),
       };
 }
 
-// ── Sub-views ─────────────────────────────────────────────────────────────────
+// ── Initial View ──────────────────────────────────────────────────────────────
 
 class _InitialView extends StatelessWidget {
   const _InitialView({
     required this.selectedImage,
     required this.onPickImage,
     required this.onStartScan,
+    required this.isAiReady,
   });
 
   final File? selectedImage;
   final VoidCallback onPickImage;
   final VoidCallback? onStartScan;
+  final bool isAiReady;
 
   @override
   Widget build(BuildContext context) => SafeArea(
@@ -151,7 +221,6 @@ class _InitialView extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Header
               Text(
                 'Identifikasi Varietasmu',
                 style: AppTextStyles.headlineLarge,
@@ -167,16 +236,28 @@ class _InitialView extends StatelessWidget {
               ),
               const SizedBox(height: AppDimensions.xl),
 
-              // Image preview / picker area
               Expanded(
                 child: _ImagePickerArea(
                   selectedImage: selectedImage,
                   onTap: onPickImage,
                 ),
               ),
+
+              // Metadata file jika gambar sudah dipilih
+              if (selectedImage != null) ...[
+                const SizedBox(height: AppDimensions.md),
+                _FileMetadataChip(file: selectedImage!),
+              ],
+
               const SizedBox(height: AppDimensions.lg),
 
-              // CTA buttons
+              // Pesan AI offline
+              if (!isAiReady)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: AppDimensions.sm),
+                  child: _AiOfflineHint(),
+                ),
+
               AppButton(
                 label: 'Mulai Scan',
                 onPressed: onStartScan,
@@ -184,14 +265,91 @@ class _InitialView extends StatelessWidget {
               ),
               const SizedBox(height: AppDimensions.sm),
               AppOutlinedButton(
-                label: selectedImage != null
-                    ? 'Ganti Gambar'
-                    : 'Pilih Gambar',
+                label: selectedImage != null ? 'Ganti Gambar' : 'Pilih Gambar',
                 onPressed: onPickImage,
                 icon: Icons.add_photo_alternate_outlined,
               ),
             ],
           ),
+        ),
+      );
+}
+
+class _FileMetadataChip extends StatelessWidget {
+  const _FileMetadataChip({required this.file});
+
+  final File file;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppDimensions.md,
+          vertical: AppDimensions.xs,
+        ),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceAlt,
+          borderRadius: BorderRadius.circular(AppDimensions.radiusFull),
+          border: Border.all(color: AppColors.divider),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(
+              Icons.image_outlined,
+              size: 14,
+              color: AppColors.textSecondary,
+            ),
+            const SizedBox(width: AppDimensions.xs),
+            Flexible(
+              child: Text(
+                FileUtils.getFileName(file.path),
+                style: AppTextStyles.labelSmall.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            const SizedBox(width: AppDimensions.xs),
+            Text(
+              '· ${FileUtils.formatFileSize(file.lengthSync())}',
+              style: AppTextStyles.labelSmall.copyWith(
+                color: AppColors.textHint,
+              ),
+            ),
+          ],
+        ),
+      );
+}
+
+class _AiOfflineHint extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppDimensions.md,
+          vertical: AppDimensions.sm,
+        ),
+        decoration: BoxDecoration(
+          color: AppColors.warningLight,
+          borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+        ),
+        child: Row(
+          children: [
+            const Icon(
+              Icons.warning_amber_rounded,
+              color: AppColors.warning,
+              size: 16,
+            ),
+            const SizedBox(width: AppDimensions.xs),
+            Expanded(
+              child: Text(
+                'AI sedang offline. Scan tidak tersedia saat ini.',
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: AppColors.warning,
+                ),
+              ),
+            ),
+          ],
         ),
       );
 }
@@ -229,20 +387,32 @@ class _ImagePickerArea extends StatelessWidget {
                   fit: StackFit.expand,
                   children: [
                     Image.file(selectedImage!, fit: BoxFit.cover),
-                    // Edit overlay
                     Positioned(
                       top: AppDimensions.sm,
                       right: AppDimensions.sm,
                       child: Container(
-                        padding: const EdgeInsets.all(AppDimensions.xs),
-                        decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.5),
-                          shape: BoxShape.circle,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppDimensions.sm,
+                          vertical: AppDimensions.xs,
                         ),
-                        child: const Icon(
-                          Icons.edit_rounded,
-                          color: Colors.white,
-                          size: AppDimensions.iconSm,
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.55),
+                          borderRadius:
+                              BorderRadius.circular(AppDimensions.radiusFull),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.edit_rounded,
+                                color: Colors.white, size: 12),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Ganti',
+                              style: AppTextStyles.labelSmall.copyWith(
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
@@ -282,6 +452,8 @@ class _ImagePickerArea extends StatelessWidget {
       );
 }
 
+// ── Uploading View ────────────────────────────────────────────────────────────
+
 class _UploadingView extends StatelessWidget {
   const _UploadingView({
     required this.selectedImage,
@@ -310,8 +482,41 @@ class _UploadingView extends StatelessWidget {
                   ),
                 ),
               const SizedBox(height: AppDimensions.xl),
-              Text('Mengunggah gambar...', style: AppTextStyles.titleLarge),
+
+              // Ikon upload animasi
+              Container(
+                width: 72,
+                height: 72,
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.cloud_upload_outlined,
+                  color: AppColors.primary,
+                  size: 36,
+                ),
+              ),
               const SizedBox(height: AppDimensions.md),
+              Text('Mengunggah gambar...', style: AppTextStyles.titleLarge),
+              const SizedBox(height: AppDimensions.xs),
+
+              if (progress > 0)
+                Text(
+                  '${(progress * 100).toInt()}% selesai',
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                )
+              else
+                Text(
+                  'Mempersiapkan gambar...',
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+
+              const SizedBox(height: AppDimensions.lg),
               ClipRRect(
                 borderRadius:
                     BorderRadius.circular(AppDimensions.radiusFull),
@@ -322,17 +527,23 @@ class _UploadingView extends StatelessWidget {
                   color: AppColors.primary,
                 ),
               ),
-              const SizedBox(height: AppDimensions.sm),
-              if (progress > 0)
+
+              if (selectedImage != null) ...[
+                const SizedBox(height: AppDimensions.md),
                 Text(
-                  '${(progress * 100).toInt()}%',
-                  style: AppTextStyles.labelMedium,
+                  FileUtils.formatFileSize(selectedImage!.lengthSync()),
+                  style: AppTextStyles.labelSmall.copyWith(
+                    color: AppColors.textHint,
+                  ),
                 ),
+              ],
             ],
           ),
         ),
       );
 }
+
+// ── Processing View ───────────────────────────────────────────────────────────
 
 class _ProcessingView extends StatelessWidget {
   const _ProcessingView({
@@ -344,6 +555,14 @@ class _ProcessingView extends StatelessWidget {
   final String imageUrl;
   final int attempt;
   final int maxAttempts;
+
+  String get _statusMessage {
+    final pct = maxAttempts > 0 ? (attempt + 1) / maxAttempts : 0.0;
+    if (pct < 0.3) return 'Mendeteksi fitur visual durian...';
+    if (pct < 0.6) return 'Mencocokkan pola dengan database varietas...';
+    if (pct < 0.85) return 'Menghitung confidence score...';
+    return 'Hampir selesai, menyiapkan hasil...';
+  }
 
   @override
   Widget build(BuildContext context) => SafeArea(
@@ -375,28 +594,51 @@ class _ProcessingView extends StatelessWidget {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: AppDimensions.sm),
-              Text(
-                'Proses ini memerlukan beberapa saat.\nMohon tunggu.',
-                style: AppTextStyles.bodyMedium.copyWith(
-                  color: AppColors.textSecondary,
+              // Pesan status yang berubah sesuai progress
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 400),
+                child: Text(
+                  _statusMessage,
+                  key: ValueKey(_statusMessage),
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
-                textAlign: TextAlign.center,
               ),
               const SizedBox(height: AppDimensions.xl),
-              // Attempt indicator
-              Text(
-                'Percobaan ${attempt + 1} dari $maxAttempts',
-                style: AppTextStyles.labelMedium,
+
+              // Progress bar dengan label
+              Row(
+                children: [
+                  Expanded(
+                    child: ClipRRect(
+                      borderRadius:
+                          BorderRadius.circular(AppDimensions.radiusFull),
+                      child: LinearProgressIndicator(
+                        value: maxAttempts > 0
+                            ? (attempt + 1) / maxAttempts
+                            : null,
+                        minHeight: 8,
+                        backgroundColor: AppColors.surfaceAlt,
+                        color: AppColors.secondary,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: AppDimensions.sm),
+                  Text(
+                    '${attempt + 1}/$maxAttempts',
+                    style: AppTextStyles.labelSmall.copyWith(
+                      color: AppColors.textHint,
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: AppDimensions.sm),
-              ClipRRect(
-                borderRadius:
-                    BorderRadius.circular(AppDimensions.radiusFull),
-                child: LinearProgressIndicator(
-                  value: maxAttempts > 0 ? (attempt + 1) / maxAttempts : null,
-                  minHeight: 6,
-                  backgroundColor: AppColors.surfaceAlt,
-                  color: AppColors.secondary,
+              Text(
+                'Proses ini memerlukan beberapa saat.',
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: AppColors.textHint,
                 ),
               ),
             ],
@@ -404,6 +646,8 @@ class _ProcessingView extends StatelessWidget {
         ),
       );
 }
+
+// ── Failure View ──────────────────────────────────────────────────────────────
 
 class _FailureView extends StatelessWidget {
   const _FailureView({

@@ -26,7 +26,7 @@ abstract class PredictionRemoteDataSource {
   /// Ambil detail prediksi via `GET /predictions/:id`.
   Future<PredictionResponseModel> getPredictionById(String id);
 
-  /// Ambil list prediksi paginated via `GET /predictions`.
+  /// Ambil list prediksi paginated via `GET /predictions/users/me`.
   Future<PaginatedPredictionResponseModel> getPredictions({
     int page = 1,
     int limit = 10,
@@ -124,7 +124,7 @@ class PredictionRemoteDataSourceImpl implements PredictionRemoteDataSource {
     int limit = 10,
   }) async {
     final response = await _apiClient.get<Map<String, dynamic>>(
-      ApiEndpoints.predictions,
+      ApiEndpoints.predictionsMe,
       queryParameters: {
         'page': page,
         'limit': limit,

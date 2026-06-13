@@ -3,16 +3,17 @@ import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile_app/core/constants/app_constants.dart';
 import 'package:mobile_app/core/error/failures.dart';
+import 'package:mobile_app/core/utils/image_hash_utils.dart';
 import 'package:mobile_app/features/prediction/application/create_prediction/create_prediction_event.dart';
 import 'package:mobile_app/features/prediction/application/create_prediction/create_prediction_state.dart';
 import 'package:mobile_app/features/prediction/domain/use_cases/create_prediction_use_case.dart';
 import 'package:mobile_app/features/prediction/domain/use_cases/get_prediction_by_id_use_case.dart';
 
-/// BLoC yang mengelola alur lengkap pembuatan prediksi:
+/// BLoC yang mengelola alur lengkap pembuatan prediksi.
 ///
-/// 1. [CreatePredictionStarted] → Upload gambar + buat record PENDING
-/// 2. [CreatePredictionPolled]  → Cek status setiap interval
-/// 3. [CreatePredictionReset]   → Kembali ke initial, batalkan polling
+/// Upgrade v2:
+/// - Setelah sukses, hash gambar disimpan ke [LastImageHashCache]
+///   agar ScanPage dapat mendeteksi duplikasi pada scan berikutnya.
 ///
 /// State transitions:
 /// ```
@@ -53,7 +54,6 @@ class CreatePredictionBloc
     _cancelPolling();
     _pollAttempt = 0;
 
-    // Step 1: Upload + Create
     emit(const CreatePredictionUploading());
 
     final result = await _createPredictionUseCase(
@@ -71,8 +71,11 @@ class CreatePredictionBloc
       (failure) => emit(CreatePredictionFailure(failure)),
       (prediction) {
         if (prediction.isComplete) {
-          // Langka tapi mungkin: prediksi selesai sangat cepat
           if (prediction.isSuccess) {
+            // Simpan hash gambar untuk deteksi duplikasi berikutnya
+            ImageHashUtils.computeHash(event.imageFile).then((hash) {
+              LastImageHashCache.save(hash, prediction.id);
+            });
             emit(CreatePredictionSuccess(prediction));
           } else {
             emit(CreatePredictionFailure(
@@ -82,7 +85,6 @@ class CreatePredictionBloc
             ));
           }
         } else {
-          // Normal: mulai polling
           emit(CreatePredictionProcessing(
             predictionId: prediction.id,
             attempt: 0,
@@ -101,14 +103,12 @@ class CreatePredictionBloc
   ) async {
     _pollAttempt++;
 
-    // Timeout jika sudah melebihi batas
     if (_pollAttempt >= AppConstants.predictionPollMaxAttempts) {
       _cancelPolling();
       emit(const CreatePredictionFailure(PredictionTimeoutFailure()));
       return;
     }
 
-    // Update attempt counter di state
     final current = state;
     if (current is CreatePredictionProcessing) {
       emit(CreatePredictionProcessing(
@@ -119,7 +119,6 @@ class CreatePredictionBloc
       ));
     }
 
-    // Cek status prediksi
     final result = await _getPredictionByIdUseCase(
       GetPredictionByIdParams(event.predictionId),
     );
@@ -161,9 +160,7 @@ class CreatePredictionBloc
     _pollTimer = Timer.periodic(
       AppConstants.predictionPollInterval,
       (_) {
-        if (!isClosed) {
-          add(CreatePredictionPolled(predictionId));
-        }
+        if (!isClosed) add(CreatePredictionPolled(predictionId));
       },
     );
   }
@@ -175,18 +172,27 @@ class CreatePredictionBloc
 
   // ── Helper ─────────────────────────────────────────────────────────────────
 
-  /// Menerjemahkan pesan error mentah dari backend menjadi pesan UI yang ramah.
   String _getFriendlyErrorMessage(String? rawMessage) {
     if (rawMessage == null) return 'AI gagal memproses gambar.';
-    
+
     final lowerCaseMessage = rawMessage.toLowerCase();
-    
-    // Tangkap error jika ditolak AI karena bukan durian
-    if (lowerCaseMessage.contains('bukan gambar buah durian') || 
+
+    if (lowerCaseMessage.contains('bukan gambar buah durian') ||
         lowerCaseMessage.contains('ditolak')) {
-      return 'Maaf, ini bukan durian.';
+      return 'Maaf, gambar ini tidak terdeteksi sebagai durian. '
+          'Coba foto dengan sudut yang lebih jelas.';
     }
-    
+
+    if (lowerCaseMessage.contains('timeout') ||
+        lowerCaseMessage.contains('timed out')) {
+      return 'AI tidak merespons tepat waktu. Coba lagi dalam beberapa saat.';
+    }
+
+    if (lowerCaseMessage.contains('network') ||
+        lowerCaseMessage.contains('connection')) {
+      return 'Koneksi terputus saat memproses. Periksa jaringan dan coba lagi.';
+    }
+
     return rawMessage;
   }
 }

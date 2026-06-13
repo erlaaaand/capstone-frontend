@@ -1,15 +1,18 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/material.dart';
 import 'package:mobile_app/core/theme/app_colors.dart';
 import 'package:mobile_app/core/theme/app_dimensions.dart';
 import 'package:mobile_app/core/theme/app_text_styles.dart';
 import 'package:mobile_app/core/utils/date_formatter.dart';
 import 'package:mobile_app/core/widgets/app_loading_overlay.dart';
 import 'package:mobile_app/features/prediction/presentation/widgets/prediction_status_badge.dart';
-import 'package:flutter/material.dart';
 
 /// Kartu ringkas prediksi untuk ditampilkan di halaman riwayat.
 ///
-/// Menampilkan thumbnail, nama varietas, confidence, status, dan waktu.
+/// Upgrade v2:
+/// - [onDelete] kini async — konfirmasi dilakukan di parent (history page)
+/// - Confidence score ditampilkan dengan warna sesuai level
+/// - Animasi swipe lebih responsif
 class PredictionCard extends StatelessWidget {
   const PredictionCard({
     super.key,
@@ -30,11 +33,20 @@ class PredictionCard extends StatelessWidget {
   final String? varietyName;
   final double? confidenceScore;
   final VoidCallback? onTap;
+
+  /// Callback hapus — konfirmasi dilakukan di parent.
   final VoidCallback? onDelete;
 
   String get _pct => confidenceScore != null
       ? '${(confidenceScore! * 100).toStringAsFixed(1)}%'
       : '-';
+
+  Color get _confidenceColor {
+    if (confidenceScore == null) return AppColors.textHint;
+    if (confidenceScore! >= 0.8) return AppColors.confidenceHigh;
+    if (confidenceScore! >= 0.5) return AppColors.confidenceMedium;
+    return AppColors.confidenceLow;
+  }
 
   @override
   Widget build(BuildContext context) => Dismissible(
@@ -42,7 +54,15 @@ class PredictionCard extends StatelessWidget {
         direction: DismissDirection.endToStart,
         background: _DeleteBackground(),
         onDismissed: (_) => onDelete?.call(),
-        confirmDismiss: (_) async => onDelete != null,
+        confirmDismiss: (_) async {
+          // Konfirmasi dilakukan di parent melalui onDelete
+          // Jika onDelete null, batalkan dismiss
+          if (onDelete == null) return false;
+          onDelete!.call();
+          // Kembalikan false agar Dismissible tidak menghapus widget
+          // (parent yang menangani penghapusan dari list)
+          return false;
+        },
         child: GestureDetector(
           onTap: onTap,
           child: Container(
@@ -50,20 +70,19 @@ class PredictionCard extends StatelessWidget {
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.surface,
               borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
-              border: Border.all(color: AppColors.divider, width: 1),
+              border: Border.all(color: AppColors.divider),
             ),
             child: Row(
               children: [
-                // ── Thumbnail ───────────────────────────────────────────────
+                // Thumbnail
                 _Thumbnail(imageUrl: imageUrl),
                 const SizedBox(width: AppDimensions.md),
 
-                // ── Info ────────────────────────────────────────────────────
+                // Info
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Nama varietas atau placeholder
                       Text(
                         varietyName ?? 'Memproses...',
                         style: AppTextStyles.titleMedium,
@@ -72,17 +91,30 @@ class PredictionCard extends StatelessWidget {
                       ),
                       const SizedBox(height: AppDimensions.xs),
 
-                      // Confidence score (hanya jika SUCCESS)
+                      // Confidence dengan warna
                       if (confidenceScore != null)
-                        Text(
-                          'Kepercayaan: $_pct',
-                          style: AppTextStyles.bodySmall.copyWith(
-                            color: AppColors.textSecondary,
-                          ),
+                        Row(
+                          children: [
+                            Container(
+                              width: 8,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                color: _confidenceColor,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Kepercayaan: $_pct',
+                              style: AppTextStyles.bodySmall.copyWith(
+                                color: _confidenceColor,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
                         ),
                       const SizedBox(height: AppDimensions.sm),
 
-                      // Status badge + waktu
                       Row(
                         children: [
                           PredictionStatusBadge.fromString(status),
@@ -97,7 +129,6 @@ class PredictionCard extends StatelessWidget {
                   ),
                 ),
 
-                // ── Chevron ─────────────────────────────────────────────────
                 const Icon(
                   Icons.chevron_right_rounded,
                   color: AppColors.textHint,
