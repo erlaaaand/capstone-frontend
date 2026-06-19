@@ -8,13 +8,6 @@ import 'package:mobile_app/features/auth/application/auth_bloc.dart';
 import 'package:mobile_app/features/auth/application/auth_event.dart';
 import 'package:mobile_app/features/auth/application/auth_state.dart';
 
-/// Halaman splash — ditampilkan saat app pertama kali buka.
-///
-/// Flow:
-/// 1. Tampil logo + animasi
-/// 2. Dispatch [AuthCheckSessionRequested]
-/// 3. Jika [AuthAuthenticated] → navigasi ke scan
-///    Jika [AuthUnauthenticated] → navigasi ke login
 class SplashPage extends StatefulWidget {
   const SplashPage({super.key});
 
@@ -51,7 +44,6 @@ class _SplashPageState extends State<SplashPage>
 
     _controller.forward();
 
-    // Delay singkat sebelum cek sesi agar animasi sempat tampil
     Future.delayed(const Duration(milliseconds: 800), () {
       if (mounted) {
         context.read<AuthBloc>().add(const AuthCheckSessionRequested());

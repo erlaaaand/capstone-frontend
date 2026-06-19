@@ -4,8 +4,6 @@ import 'package:mobile_app/core/theme/app_text_styles.dart';
 import 'package:mobile_app/core/widgets/app_text_field.dart';
 import 'package:flutter/material.dart';
 
-/// Field password dengan indikator kekuatan password (khusus Register).
-/// Untuk Login, gunakan [AppPasswordField] langsung.
 class PasswordStrengthField extends StatefulWidget {
   const PasswordStrengthField({
     super.key,

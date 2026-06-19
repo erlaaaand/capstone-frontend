@@ -1,16 +1,11 @@
 import 'package:dartz/dartz.dart';
 import 'package:equatable/equatable.dart';
 
-/// Value object Password dengan validasi sesuai constraint Swagger RegisterDto.
-///
-/// - Minimal 8, maksimal 128 karakter
-/// - Harus mengandung huruf besar, huruf kecil, dan angka
 class Password extends Equatable {
   const Password._(this.value);
 
   factory Password(String input) => Password._(_validate(input));
 
-  /// Left = pesan error, Right = password valid (nilai asli, tidak di-hash).
   final Either<String, String> value;
 
   static const int _minLength = 8;

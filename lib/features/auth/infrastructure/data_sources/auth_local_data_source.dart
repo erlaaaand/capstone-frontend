@@ -1,6 +1,5 @@
 import 'package:mobile_app/core/storage/secure_storage_service.dart';
 
-/// Akses token & session dari secure storage.
 abstract class AuthLocalDataSource {
   Future<void> saveSession({
     required String accessToken,

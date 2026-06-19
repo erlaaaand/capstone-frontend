@@ -4,14 +4,12 @@ sealed class AuthEvent extends Equatable {
   const AuthEvent();
 }
 
-/// Cek apakah ada sesi aktif saat splash screen.
 final class AuthCheckSessionRequested extends AuthEvent {
   const AuthCheckSessionRequested();
   @override
   List<Object?> get props => [];
 }
 
-/// User menekan tombol login.
 final class AuthLoginRequested extends AuthEvent {
   const AuthLoginRequested({required this.email, required this.password});
 
@@ -22,7 +20,6 @@ final class AuthLoginRequested extends AuthEvent {
   List<Object?> get props => [email, password];
 }
 
-/// User menekan tombol register.
 final class AuthRegisterRequested extends AuthEvent {
   const AuthRegisterRequested({
     required this.email,
@@ -38,7 +35,6 @@ final class AuthRegisterRequested extends AuthEvent {
   List<Object?> get props => [email, password, fullName];
 }
 
-/// User menekan tombol logout.
 final class AuthLogoutRequested extends AuthEvent {
   const AuthLogoutRequested();
   @override

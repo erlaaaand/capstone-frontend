@@ -6,13 +6,6 @@ import 'package:mobile_app/features/auth/domain/use_cases/login_use_case.dart';
 import 'package:mobile_app/features/auth/domain/use_cases/log_out_use_case.dart';
 import 'package:mobile_app/features/auth/domain/use_cases/register_use_case.dart';
 
-/// BLoC yang mengelola state autentikasi aplikasi.
-///
-/// Events yang diterima:
-/// - [AuthCheckSessionRequested] → cek sesi aktif (splash)
-/// - [AuthLoginRequested]        → proses login
-/// - [AuthRegisterRequested]     → proses register
-/// - [AuthLogoutRequested]       → hapus sesi lokal
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
   AuthBloc({
     required LoginUseCase loginUseCase,

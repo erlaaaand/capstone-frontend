@@ -6,21 +6,18 @@ sealed class AuthState extends Equatable {
   const AuthState();
 }
 
-/// State awal — belum tahu apakah ada sesi.
 final class AuthInitial extends AuthState {
   const AuthInitial();
   @override
   List<Object?> get props => [];
 }
 
-/// Sedang memeriksa sesi / melakukan request.
 final class AuthLoading extends AuthState {
   const AuthLoading();
   @override
   List<Object?> get props => [];
 }
 
-/// Login / register berhasil — user terautentikasi.
 final class AuthAuthenticated extends AuthState {
   const AuthAuthenticated({required this.user});
 
@@ -30,14 +27,12 @@ final class AuthAuthenticated extends AuthState {
   List<Object?> get props => [user];
 }
 
-/// Tidak ada sesi atau sudah logout.
 final class AuthUnauthenticated extends AuthState {
   const AuthUnauthenticated();
   @override
   List<Object?> get props => [];
 }
 
-/// Login / register gagal.
 final class AuthFailureState extends AuthState {
   const AuthFailureState({required this.failure});
 

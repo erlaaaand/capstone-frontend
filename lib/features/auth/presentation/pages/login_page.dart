@@ -119,7 +119,7 @@ class _LoginPageState extends State<LoginPage> {
                           FocusScope.of(context).requestFocus(_passwordFocus),
                       validator: Validator.email,
                     ),
-                    const SizedBox(height: AppDimensions.md),
+                    SizedBox(height: AppDimensions.md),
 
                     // ── Password ────────────────────────────────────────
                     AppPasswordField(
@@ -152,19 +152,19 @@ class _LoginPageState extends State<LoginPage> {
                     const SizedBox(height: AppDimensions.xl),
 
                     // ── Divider ─────────────────────────────────────────
-                    const Row(
+                    Row(
                       children: [
-                        Expanded(child: Divider()),
+                        const Expanded(child: Divider()),
                         Padding(
                           padding: EdgeInsets.symmetric(
                             horizontal: AppDimensions.md,
                           ),
-                          child: Text(
+                          child: const Text(
                             'atau',
                             style: AppTextStyles.bodySmall,
                           ),
                         ),
-                        Expanded(child: Divider()),
+                        const Expanded(child: Divider()),
                       ],
                     ),
                     const SizedBox(height: AppDimensions.xl),
@@ -175,7 +175,7 @@ class _LoginPageState extends State<LoginPage> {
                       actionLabel: 'Daftar Sekarang',
                       onAction: isLoading ? _noOp : _goToRegister,
                     ),
-                    const SizedBox(height: AppDimensions.md),
+                    SizedBox(height: AppDimensions.md),
                   ],
                 ),
               ),

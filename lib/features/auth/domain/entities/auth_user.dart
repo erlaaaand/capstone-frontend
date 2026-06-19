@@ -1,7 +1,4 @@
 import 'package:equatable/equatable.dart';
-
-/// Entity user minimal yang dikembalikan bersama JWT token.
-/// Sesuai schema `AuthUserDto` dari Swagger.
 class AuthUser extends Equatable {
   const AuthUser({
     required this.id,
@@ -9,13 +6,10 @@ class AuthUser extends Equatable {
     this.fullName,
   });
 
-  /// UUID user.
   final String id;
 
-  /// Email terdaftar.
   final String email;
 
-  /// Nama lengkap, null jika belum diisi.
   final String? fullName;
 
   @override

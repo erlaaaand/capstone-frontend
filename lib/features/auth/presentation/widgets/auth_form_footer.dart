@@ -2,7 +2,6 @@ import 'package:mobile_app/core/theme/app_colors.dart';
 import 'package:mobile_app/core/theme/app_text_styles.dart';
 import 'package:flutter/material.dart';
 
-/// Footer di bawah form auth — teks "Sudah punya akun? Login" atau sebaliknya.
 class AuthFormFooter extends StatelessWidget {
   const AuthFormFooter({
     super.key,

@@ -1,7 +1,5 @@
 import 'package:mobile_app/features/auth/domain/entities/auth_user.dart';
 
-/// DTO untuk field `user` di dalam `AuthResponseDto`.
-/// Sesuai schema `AuthUserDto` dari Swagger.
 class AuthUserModel {
   const AuthUserModel({
     required this.id,

@@ -1,8 +1,6 @@
 import 'package:mobile_app/features/auth/domain/entities/auth_token.dart';
 import 'package:mobile_app/features/auth/infrastructure/models/auth_user_model.dart';
 
-/// DTO untuk response body `POST /auth/register` dan `POST /auth/login`.
-/// Sesuai schema `AuthResponseDto` dari Swagger.
 class AuthResponseModel {
   const AuthResponseModel({
     required this.accessToken,

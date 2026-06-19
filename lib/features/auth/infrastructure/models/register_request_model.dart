@@ -1,5 +1,3 @@
-/// Request body untuk `POST /auth/register`.
-/// Sesuai schema `RegisterDto` dari Swagger.
 class RegisterRequestModel {
   const RegisterRequestModel({
     required this.email,

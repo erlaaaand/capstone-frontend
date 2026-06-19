@@ -122,7 +122,7 @@ class _RegisterPageState extends State<RegisterPage> {
                             FocusScope.of(context).requestFocus(_emailFocus),
                         validator: Validator.fullName,
                       ),
-                      const SizedBox(height: AppDimensions.md),
+                      SizedBox(height: AppDimensions.md),
 
                       // ── Email ─────────────────────────────────────────
                       AppTextField(
@@ -139,7 +139,7 @@ class _RegisterPageState extends State<RegisterPage> {
                             FocusScope.of(context).requestFocus(_passwordFocus),
                         validator: Validator.email,
                       ),
-                      const SizedBox(height: AppDimensions.md),
+                      SizedBox(height: AppDimensions.md),
 
                       // ── Password dengan strength indicator ───────────
                       PasswordStrengthField(
@@ -147,7 +147,7 @@ class _RegisterPageState extends State<RegisterPage> {
                         validator: Validator.password,
                         showStrengthIndicator: true,
                       ),
-                      const SizedBox(height: AppDimensions.md),
+                      SizedBox(height: AppDimensions.md),
 
                       // ── Konfirmasi Password ───────────────────────────
                       AppPasswordField(

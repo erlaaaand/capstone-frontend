@@ -38,7 +38,6 @@ class AuthRepositoryImpl implements AuthRepository {
         RegisterRequestModel(email: email, password: password, fullName: fullName),
       );
 
-      // Simpan sesi setelah register berhasil
       await _local.saveSession(
         accessToken: model.accessToken,
         userId: model.user.id,
