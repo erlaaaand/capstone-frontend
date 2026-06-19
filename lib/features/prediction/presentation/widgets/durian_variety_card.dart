@@ -5,8 +5,6 @@ import 'package:mobile_app/core/theme/app_text_styles.dart';
 import 'package:mobile_app/core/widgets/app_loading_overlay.dart';
 import 'package:flutter/material.dart';
 
-/// Kartu utama hasil prediksi — menampilkan varietas, asal, deskripsi,
-/// gambar durian, dan confidence gauge.
 class DurianVarietyCard extends StatelessWidget {
   const DurianVarietyCard({
     super.key,
@@ -26,7 +24,6 @@ class DurianVarietyCard extends StatelessWidget {
   final String? description;
   final String imageUrl;
 
-  /// Slot untuk [ConfidenceGauge] agar kartu tidak bergantung langsung.
   final Widget confidenceWidget;
 
   @override
@@ -84,9 +81,9 @@ class DurianVarietyCard extends StatelessWidget {
                   ),
 
                   // ── Divider ───────────────────────────────────────────────
-                  const Padding(
+                  Padding(
                     padding: EdgeInsets.symmetric(vertical: AppDimensions.md),
-                    child: Divider(),
+                    child: const Divider(),
                   ),
 
                   // ── Asal ──────────────────────────────────────────────────
@@ -99,7 +96,7 @@ class DurianVarietyCard extends StatelessWidget {
 
                   // ── Deskripsi ─────────────────────────────────────────────
                   if (description != null) ...[
-                    const SizedBox(height: AppDimensions.md),
+                    SizedBox(height: AppDimensions.md),
                     Text('Deskripsi', style: AppTextStyles.titleMedium),
                     const SizedBox(height: AppDimensions.xs),
                     _ExpandableDescription(text: description!),

@@ -5,11 +5,6 @@ import 'package:mobile_app/core/usecases/usecase.dart';
 import 'package:mobile_app/features/prediction/domain/entities/prediction.dart';
 import 'package:mobile_app/features/prediction/domain/repositories/prediction_repository.dart';
 
-/// Ambil detail satu prediksi berdasarkan ID.
-///
-/// Dipakai untuk:
-/// - Polling status (di [CreatePredictionBloc])
-/// - Menampilkan detail dari riwayat
 class GetPredictionByIdUseCase
     extends UseCase<Prediction, GetPredictionByIdParams> {
   GetPredictionByIdUseCase(this._repository);

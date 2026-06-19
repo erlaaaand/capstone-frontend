@@ -13,7 +13,7 @@ import 'package:mobile_app/features/prediction/application/prediction_list/predi
 import 'package:mobile_app/features/prediction/application/prediction_list/prediction_list_event.dart';
 import 'package:mobile_app/features/prediction/application/prediction_list/prediction_list_state.dart';
 import 'package:mobile_app/features/prediction/domain/entities/prediction.dart';
-import 'package:mobile_app/features/prediction/domain/value_objects/prediction_status.dart';
+// import 'package:mobile_app/features/prediction/domain/value_objects/prediction_status.dart';
 import 'package:mobile_app/features/prediction/presentation/widgets/prediction_card.dart';
 
 /// Filter status untuk riwayat prediksi.
@@ -220,7 +220,7 @@ class _PredictionHistoryPageState extends State<PredictionHistoryPage> {
                   color: AppColors.primary,
                   child: ListView.separated(
                     controller: _scrollController,
-                    padding: const EdgeInsets.fromLTRB(
+                    padding: EdgeInsets.fromLTRB(
                       AppDimensions.pagePaddingH,
                       AppDimensions.md,
                       AppDimensions.pagePaddingH,
@@ -231,10 +231,10 @@ class _PredictionHistoryPageState extends State<PredictionHistoryPage> {
                         const SizedBox(height: AppDimensions.sm),
                     itemBuilder: (context, index) {
                       if (index == filtered.length) {
-                        return const Padding(
+                        return Padding(
                           padding: EdgeInsets.symmetric(
                               vertical: AppDimensions.md),
-                          child: Center(
+                          child: const Center(
                             child: CircularProgressIndicator(
                               color: AppColors.primary,
                               strokeWidth: 2.5,
@@ -285,7 +285,7 @@ class _StatsRow extends StatelessWidget {
     final failed = items.where((p) => p.status.isFailed).length;
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(
+      padding: EdgeInsets.fromLTRB(
         AppDimensions.pagePaddingH,
         AppDimensions.md,
         AppDimensions.pagePaddingH,
@@ -445,7 +445,7 @@ class _FilterChip extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(
+        padding: EdgeInsets.symmetric(
           horizontal: AppDimensions.md,
           vertical: AppDimensions.xs,
         ),

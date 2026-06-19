@@ -6,7 +6,6 @@ sealed class PredictionListState extends Equatable {
   const PredictionListState();
 }
 
-/// State awal — BLoC baru dibuat, belum ada fetch.
 final class PredictionListInitial extends PredictionListState {
   const PredictionListInitial();
 
@@ -14,7 +13,6 @@ final class PredictionListInitial extends PredictionListState {
   List<Object?> get props => [];
 }
 
-/// Memuat halaman pertama (shimmer/skeleton tampil di UI).
 final class PredictionListLoading extends PredictionListState {
   const PredictionListLoading();
 
@@ -22,10 +20,6 @@ final class PredictionListLoading extends PredictionListState {
   List<Object?> get props => [];
 }
 
-/// Data sudah dimuat — list bisa kosong atau berisi items.
-///
-/// [isLoadingMore] true saat sedang memuat halaman berikutnya
-/// (pagination — spinner kecil di bawah list).
 final class PredictionListPopulated extends PredictionListState {
   const PredictionListPopulated({
     required this.items,
@@ -36,13 +30,10 @@ final class PredictionListPopulated extends PredictionListState {
 
   final List<Prediction> items;
 
-  /// Masih ada halaman berikutnya yang bisa di-load.
   final bool hasNextPage;
 
-  /// Halaman terakhir yang sudah di-load.
   final int currentPage;
 
-  /// Sedang memuat halaman berikutnya (infinite scroll).
   final bool isLoadingMore;
 
   bool get isEmpty => items.isEmpty;
@@ -64,10 +55,6 @@ final class PredictionListPopulated extends PredictionListState {
   List<Object?> get props => [items, hasNextPage, currentPage, isLoadingMore];
 }
 
-/// Terjadi error saat fetch.
-///
-/// [previousItems] berisi data lama yang sudah ada (jika ada),
-/// agar UI bisa tetap menampilkan data sebelumnya + pesan error inline.
 final class PredictionListFailure extends PredictionListState {
   const PredictionListFailure({
     required this.failure,
@@ -76,7 +63,6 @@ final class PredictionListFailure extends PredictionListState {
 
   final Failure failure;
 
-  /// Item yang sudah dimuat sebelum error (bisa empty).
   final List<Prediction> previousItems;
 
   bool get hasPreviousData => previousItems.isNotEmpty;

@@ -13,13 +13,6 @@ import 'package:mobile_app/features/prediction/presentation/widgets/confidence_g
 import 'package:mobile_app/features/prediction/presentation/widgets/durian_variety_card.dart';
 import 'package:mobile_app/features/prediction/presentation/widgets/prediction_status_badge.dart';
 
-/// Halaman detail hasil prediksi.
-///
-/// Dapat diakses dari dua kondisi:
-/// 1. Navigasi dari [ScanPage] setelah sukses — menerima [Prediction] via `extra`
-/// 2. Navigasi dari [PredictionHistoryPage] — menerima [Prediction] via `extra`
-///
-/// Route: `/app/scan/result/:predictionId`
 class PredictionResultPage extends StatelessWidget {
   const PredictionResultPage({
     super.key,
@@ -27,10 +20,8 @@ class PredictionResultPage extends StatelessWidget {
     this.prediction,
   });
 
-  /// ID prediksi dari path parameter.
   final String predictionId;
 
-  /// Objek prediksi, dikirim via GoRouter `extra` untuk menghindari refetch.
   final Prediction? prediction;
 
   @override
@@ -47,8 +38,8 @@ class PredictionResultPage extends StatelessWidget {
                 color: AppColors.error,
                 size: AppDimensions.iconXxl,
               ),
-              const SizedBox(height: AppDimensions.md),
-              Text(
+              SizedBox(height: AppDimensions.md),
+              const Text(
                 'Data prediksi tidak tersedia.',
                 style: AppTextStyles.headlineSmall,
               ),
@@ -92,7 +83,7 @@ class PredictionResultPage extends StatelessWidget {
             ),
             actions: [
               Padding(
-                padding: const EdgeInsets.only(right: AppDimensions.md),
+                padding: EdgeInsets.only(right: AppDimensions.md),
                 child: Center(
                   child: PredictionStatusBadge.fromString(p.status.value),
                 ),
@@ -159,8 +150,8 @@ class _SuccessContent extends StatelessWidget {
 
         // ── Skor semua kelas ─────────────────────────────────────────────
         if (p.allScores != null && p.allScores!.isNotEmpty) ...[
-          Text('Perbandingan Varietas', style: AppTextStyles.headlineSmall),
-          const SizedBox(height: AppDimensions.md),
+          const Text('Perbandingan Varietas', style: AppTextStyles.headlineSmall),
+          SizedBox(height: AppDimensions.md),
           _AllScoresSection(
             allScores: p.allScores!,
             predictedClass: p.predictedClass,
@@ -275,7 +266,7 @@ class _ScoreBarState extends State<_ScoreBar>
   Widget build(BuildContext context) => AnimatedBuilder(
         animation: _anim,
         builder: (_, __) => Container(
-          padding: const EdgeInsets.all(AppDimensions.md),
+          padding: EdgeInsets.all(AppDimensions.md),
           decoration: BoxDecoration(
             color: widget.isHighlighted
                 ? AppColors.primary.withOpacity(0.08)
@@ -362,7 +353,7 @@ class _FailedContent extends StatelessWidget {
                   color: AppColors.error,
                   size: AppDimensions.iconXxl,
                 ),
-                const SizedBox(height: AppDimensions.md),
+                SizedBox(height: AppDimensions.md),
                 Text(
                   'AI Gagal Menganalisis',
                   style: AppTextStyles.headlineSmall.copyWith(
@@ -433,7 +424,7 @@ class _MetadataSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.all(AppDimensions.md),
+        padding: EdgeInsets.all(AppDimensions.md),
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
@@ -518,7 +509,7 @@ class _BottomBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) => SafeArea(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(
+          padding: EdgeInsets.fromLTRB(
             AppDimensions.pagePaddingH,
             AppDimensions.sm,
             AppDimensions.pagePaddingH,

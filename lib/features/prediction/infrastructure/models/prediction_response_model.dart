@@ -1,4 +1,3 @@
-/// Model JSON untuk satu prediksi dari API NestJS.
 class PredictionResponseModel {
   const PredictionResponseModel({
     required this.id,
@@ -24,7 +23,6 @@ class PredictionResponseModel {
       );
     }
 
-    // Fungsi bantuan untuk mem-parsing confidence yang mungkin berupa String atau Double
     double? parseConfidence(dynamic value) {
       if (value == null) return null;
       if (value is num) return value.toDouble();
@@ -36,17 +34,13 @@ class PredictionResponseModel {
       id: json['id'] as String,
       userId: json['userId'] as String,
       imageUrl: json['imageUrl'] as String,
-      // Berikan nilai default string kosong jika fileKey tidak dikirim backend
       fileKey: json['fileKey'] as String? ?? '', 
       status: json['status'] as String,
-      // Backend menggunakan key 'varietyCode' sebagai ganti 'predictedClass'
       predictedClass: json['varietyCode'] as String? ?? json['predictedClass'] as String?,
-      // Backend menggunakan key 'confidenceScore' (String) sebagai ganti 'confidence'
       confidence: parseConfidence(json['confidenceScore'] ?? json['confidence']),
       allScores: allScores,
       errorMessage: json['errorMessage'] as String?,
       createdAt: json['createdAt'] as String,
-      // Jika updatedAt tidak dikirim backend, gunakan nilai createdAt sebagai fallback
       updatedAt: json['updatedAt'] as String? ?? json['createdAt'] as String,
     );
   }

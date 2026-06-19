@@ -11,12 +11,6 @@ import 'package:mobile_app/features/prediction/infrastructure/data_sources/predi
 import 'package:mobile_app/features/prediction/infrastructure/mappers/prediction_mapper.dart';
 import 'package:mobile_app/features/prediction/infrastructure/models/create_prediction_request_model.dart';
 
-/// Implementasi konkret [PredictionRepository].
-///
-/// Setiap method:
-/// 1. Memanggil data source
-/// 2. Map model → entity (sukses)
-/// 3. Konversi exception → Failure (gagal)
 class PredictionRepositoryImpl implements PredictionRepository {
   PredictionRepositoryImpl(this._dataSource);
 
@@ -98,9 +92,6 @@ class PredictionRepositoryImpl implements PredictionRepository {
 
   // ── Helpers ─────────────────────────────────────────────────────────────────
 
-  /// Handle DioException — unwrap ServerException dari error interceptor.
-  ///
-  /// [is404] override failure untuk status 404 (agar tidak pakai UserNotFoundFailure).
   Failure _handleDioException(DioException e, {Failure? is404}) {
     final error = e.error;
     if (error is ServerException) {

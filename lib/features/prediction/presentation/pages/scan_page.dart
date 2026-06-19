@@ -22,15 +22,6 @@ import 'package:mobile_app/features/prediction/application/create_prediction/cre
 import 'package:mobile_app/features/prediction/application/create_prediction/create_prediction_event.dart';
 import 'package:mobile_app/features/prediction/application/create_prediction/create_prediction_state.dart';
 
-/// Halaman utama scan durian — versi upgrade.
-///
-/// Peningkatan UX:
-/// - AI status banner ditampilkan di atas halaman
-/// - Tombol scan dinonaktifkan jika AI offline
-/// - Dedup check: cegah upload gambar yang sama
-/// - Progress upload lebih informatif (bytes / persentase)
-/// - Pesan error lebih ramah dan actionable
-/// - Metadata file (nama + ukuran) ditampilkan saat gambar dipilih
 class ScanPage extends StatefulWidget {
   const ScanPage({super.key});
 
@@ -141,7 +132,7 @@ class _ScanPageState extends State<ScanPage> {
             builder: (context, aiState) {
               if (aiState is AiHealthLoaded) {
                 return Padding(
-                  padding: const EdgeInsets.only(right: AppDimensions.md),
+                  padding: EdgeInsets.only(right: AppDimensions.md),
                   child: Center(
                     child: AiStatusIndicator(
                       status: aiState.indicatorValue,
@@ -175,15 +166,10 @@ class _ScanPageState extends State<ScanPage> {
             selectedImage: _selectedImage,
             progress: progress,
           ),
-        CreatePredictionProcessing(
-          :final attempt,
-          :final maxAttempts,
-          :final imageUrl,
-        ) =>
-          _ProcessingView(
-            imageUrl: imageUrl,
-            attempt: attempt,
-            maxAttempts: maxAttempts,
+        CreatePredictionProcessing() => const _ProcessingView(
+            imageUrl: '',
+            attempt: 0,
+            maxAttempts: 0,
           ),
         CreatePredictionSuccess() => const SizedBox.shrink(),
         CreatePredictionFailure(:final failure) => _FailureView(
@@ -245,7 +231,7 @@ class _InitialView extends StatelessWidget {
 
               // Metadata file jika gambar sudah dipilih
               if (selectedImage != null) ...[
-                const SizedBox(height: AppDimensions.md),
+                SizedBox(height: AppDimensions.md),
                 _FileMetadataChip(file: selectedImage!),
               ],
 
@@ -282,7 +268,7 @@ class _FileMetadataChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.symmetric(
+        padding: EdgeInsets.symmetric(
           horizontal: AppDimensions.md,
           vertical: AppDimensions.xs,
         ),
@@ -325,7 +311,7 @@ class _FileMetadataChip extends StatelessWidget {
 class _AiOfflineHint extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.symmetric(
+        padding: EdgeInsets.symmetric(
           horizontal: AppDimensions.md,
           vertical: AppDimensions.sm,
         ),
@@ -434,7 +420,7 @@ class _ImagePickerArea extends StatelessWidget {
                         size: AppDimensions.iconXl,
                       ),
                     ),
-                    const SizedBox(height: AppDimensions.md),
+                    SizedBox(height: AppDimensions.md),
                     Text(
                       'Tap untuk pilih gambar',
                       style: AppTextStyles.titleMedium.copyWith(
@@ -497,7 +483,7 @@ class _UploadingView extends StatelessWidget {
                   size: 36,
                 ),
               ),
-              const SizedBox(height: AppDimensions.md),
+              SizedBox(height: AppDimensions.md),
               Text('Mengunggah gambar...', style: AppTextStyles.titleLarge),
               const SizedBox(height: AppDimensions.xs),
 
@@ -529,7 +515,7 @@ class _UploadingView extends StatelessWidget {
               ),
 
               if (selectedImage != null) ...[
-                const SizedBox(height: AppDimensions.md),
+                SizedBox(height: AppDimensions.md),
                 Text(
                   FileUtils.formatFileSize(selectedImage!.lengthSync()),
                   style: AppTextStyles.labelSmall.copyWith(

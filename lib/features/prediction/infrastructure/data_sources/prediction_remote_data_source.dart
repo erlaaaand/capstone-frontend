@@ -10,33 +10,26 @@ import 'package:mobile_app/features/prediction/infrastructure/models/create_pred
 import 'package:mobile_app/features/prediction/infrastructure/models/paginated_prediction_response_model.dart';
 import 'package:mobile_app/features/prediction/infrastructure/models/prediction_response_model.dart';
 
-/// Kontrak data source prediksi.
 abstract class PredictionRemoteDataSource {
-  /// Upload gambar ke storage. Return `(imageUrl, fileKey)`.
   Future<({String imageUrl, String fileKey})> uploadImage(
     File image, {
     void Function(int sent, int total)? onProgress,
   });
 
-  /// Buat record prediksi baru via `POST /predictions`.
   Future<PredictionResponseModel> createPrediction(
     CreatePredictionRequestModel request,
   );
 
-  /// Ambil detail prediksi via `GET /predictions/:id`.
   Future<PredictionResponseModel> getPredictionById(String id);
 
-  /// Ambil list prediksi paginated via `GET /predictions/users/me`.
   Future<PaginatedPredictionResponseModel> getPredictions({
     int page = 1,
     int limit = 10,
   });
 
-  /// Hapus prediksi via `DELETE /predictions/:id`.
   Future<void> deletePrediction(String id);
 }
 
-/// Implementasi [PredictionRemoteDataSource] menggunakan [ApiClient] (Dio).
 class PredictionRemoteDataSourceImpl implements PredictionRemoteDataSource {
   PredictionRemoteDataSourceImpl(this._apiClient);
 

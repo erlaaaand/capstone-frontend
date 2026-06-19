@@ -5,14 +5,6 @@ import 'package:mobile_app/core/theme/app_dimensions.dart';
 import 'package:mobile_app/core/theme/app_text_styles.dart';
 import 'package:flutter/material.dart';
 
-/// Gauge setengah lingkaran yang menampilkan confidence score AI.
-///
-/// Score 0.0–1.0 dipetakan ke sudut 0°–180°.
-/// Warna berubah dari merah (rendah) → kuning (sedang) → hijau (tinggi).
-///
-/// ```dart
-/// ConfidenceGauge(score: 0.9231, varietyCode: 'D197')
-/// ```
 class ConfidenceGauge extends StatefulWidget {
   const ConfidenceGauge({
     super.key,
@@ -21,10 +13,8 @@ class ConfidenceGauge extends StatefulWidget {
     this.size = AppDimensions.gaugeSize,
   });
 
-  /// Confidence score dari API (0.0 – 1.0, 4 desimal).
   final double score;
 
-  /// Kode varietas, ditampilkan di tengah gauge.
   final String? varietyCode;
 
   final double size;

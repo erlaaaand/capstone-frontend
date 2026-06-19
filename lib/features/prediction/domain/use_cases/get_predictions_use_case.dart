@@ -6,9 +6,6 @@ import 'package:mobile_app/core/usecases/usecase.dart';
 import 'package:mobile_app/features/prediction/domain/entities/prediction.dart';
 import 'package:mobile_app/features/prediction/domain/repositories/prediction_repository.dart';
 
-/// Ambil list prediksi milik user dengan pagination.
-///
-/// Dipakai di [PredictionListBloc] untuk halaman riwayat.
 class GetPredictionsUseCase
     extends UseCase<PaginatedPredictions, GetPredictionsParams> {
   GetPredictionsUseCase(this._repository);

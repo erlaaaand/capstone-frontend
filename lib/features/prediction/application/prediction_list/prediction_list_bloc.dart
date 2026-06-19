@@ -6,13 +6,6 @@ import 'package:mobile_app/features/prediction/domain/entities/prediction.dart';
 import 'package:mobile_app/features/prediction/domain/use_cases/delete_prediction_use_case.dart';
 import 'package:mobile_app/features/prediction/domain/use_cases/get_predictions_use_case.dart';
 
-/// BLoC yang mengelola daftar prediksi (riwayat scan) dengan pagination.
-///
-/// Flow:
-/// - [PredictionListFetched]          → load halaman 1
-/// - [PredictionListNextPageFetched]  → load halaman n+1 (append)
-/// - [PredictionListRefreshed]        → reset ke halaman 1
-/// - [PredictionListItemDeleted]      → optimistic delete lalu konfirmasi ke API
 class PredictionListBloc
     extends Bloc<PredictionListEvent, PredictionListState> {
   PredictionListBloc({
@@ -36,7 +29,6 @@ class PredictionListBloc
     PredictionListFetched event,
     Emitter<PredictionListState> emit,
   ) async {
-    // Hindari double-fetch jika sudah ada data
     if (state is PredictionListPopulated) return;
 
     emit(const PredictionListLoading());
@@ -51,7 +43,6 @@ class PredictionListBloc
     if (current is! PredictionListPopulated) return;
     if (!current.hasNextPage || current.isLoadingMore) return;
 
-    // Tampilkan loading more spinner
     emit(current.copyWith(isLoadingMore: true));
     await _fetchPage(current.currentPage + 1, emit, previousItems: current.items);
   }
@@ -71,13 +62,11 @@ class PredictionListBloc
     final current = state;
     if (current is! PredictionListPopulated) return;
 
-    // Optimistic update: hapus dari list lokal dulu
     final updatedItems = current.items
         .where((p) => p.id != event.predictionId)
         .toList();
     emit(current.copyWith(items: updatedItems));
 
-    // Konfirmasi ke API (fire-and-forget, error tidak di-surface ke UI)
     await _deletePredictionUseCase(DeletePredictionParams(event.predictionId));
   }
 

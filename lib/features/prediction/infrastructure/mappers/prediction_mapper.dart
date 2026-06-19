@@ -4,13 +4,9 @@ import 'package:mobile_app/features/prediction/domain/value_objects/prediction_s
 import 'package:mobile_app/features/prediction/infrastructure/models/paginated_prediction_response_model.dart';
 import 'package:mobile_app/features/prediction/infrastructure/models/prediction_response_model.dart';
 
-/// Konversi antara infrastructure model dan domain entity.
-///
-/// Dipanggil di [PredictionRepositoryImpl] setelah menerima data dari API.
 class PredictionMapper {
   PredictionMapper._();
 
-  /// Konversi [PredictionResponseModel] → [Prediction].
   static Prediction fromModel(PredictionResponseModel model) {
     return Prediction(
       id: model.id,
@@ -29,7 +25,6 @@ class PredictionMapper {
     );
   }
 
-  /// Konversi [PaginatedPredictionResponseModel] → [PaginatedPredictions].
   static PaginatedPredictions fromPaginatedModel(
     PaginatedPredictionResponseModel model,
   ) {

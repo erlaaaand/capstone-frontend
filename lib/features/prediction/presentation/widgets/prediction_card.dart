@@ -7,12 +7,6 @@ import 'package:mobile_app/core/utils/date_formatter.dart';
 import 'package:mobile_app/core/widgets/app_loading_overlay.dart';
 import 'package:mobile_app/features/prediction/presentation/widgets/prediction_status_badge.dart';
 
-/// Kartu ringkas prediksi untuk ditampilkan di halaman riwayat.
-///
-/// Upgrade v2:
-/// - [onDelete] kini async — konfirmasi dilakukan di parent (history page)
-/// - Confidence score ditampilkan dengan warna sesuai level
-/// - Animasi swipe lebih responsif
 class PredictionCard extends StatelessWidget {
   const PredictionCard({
     super.key,
@@ -34,7 +28,6 @@ class PredictionCard extends StatelessWidget {
   final double? confidenceScore;
   final VoidCallback? onTap;
 
-  /// Callback hapus — konfirmasi dilakukan di parent.
   final VoidCallback? onDelete;
 
   String get _pct => confidenceScore != null
@@ -55,18 +48,14 @@ class PredictionCard extends StatelessWidget {
         background: _DeleteBackground(),
         onDismissed: (_) => onDelete?.call(),
         confirmDismiss: (_) async {
-          // Konfirmasi dilakukan di parent melalui onDelete
-          // Jika onDelete null, batalkan dismiss
           if (onDelete == null) return false;
           onDelete!.call();
-          // Kembalikan false agar Dismissible tidak menghapus widget
-          // (parent yang menangani penghapusan dari list)
           return false;
         },
         child: GestureDetector(
           onTap: onTap,
           child: Container(
-            padding: const EdgeInsets.all(AppDimensions.md),
+            padding: EdgeInsets.all(AppDimensions.md),
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.surface,
               borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
@@ -76,7 +65,7 @@ class PredictionCard extends StatelessWidget {
               children: [
                 // Thumbnail
                 _Thumbnail(imageUrl: imageUrl),
-                const SizedBox(width: AppDimensions.md),
+                SizedBox(width: AppDimensions.md),
 
                 // Info
                 Expanded(

@@ -4,9 +4,6 @@ import 'package:mobile_app/core/error/failures.dart';
 import 'package:mobile_app/core/usecases/usecase.dart';
 import 'package:mobile_app/features/prediction/domain/repositories/prediction_repository.dart';
 
-/// Hapus prediksi berdasarkan ID.
-///
-/// Backend bertanggung jawab menghapus file storage terkait secara cascade.
 class DeletePredictionUseCase extends UseCase<void, DeletePredictionParams> {
   DeletePredictionUseCase(this._repository);
 

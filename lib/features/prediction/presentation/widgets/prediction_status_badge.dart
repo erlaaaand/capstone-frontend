@@ -5,11 +5,6 @@ import 'package:flutter/material.dart';
 
 enum PredictionStatusDisplay { pending, success, failed }
 
-/// Badge kecil berwarna untuk menampilkan status prediksi.
-///
-/// PENDING → amber berputar
-/// SUCCESS → hijau
-/// FAILED  → merah
 class PredictionStatusBadge extends StatefulWidget {
   const PredictionStatusBadge({
     super.key,
@@ -28,7 +23,6 @@ class PredictionStatusBadge extends StatefulWidget {
 
   final PredictionStatusDisplay status;
 
-  /// Compact: hanya dot tanpa label.
   final bool compact;
 
   static PredictionStatusDisplay _fromString(String raw) =>
