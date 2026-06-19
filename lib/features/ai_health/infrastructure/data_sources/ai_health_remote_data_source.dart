@@ -8,12 +8,8 @@ import 'package:mobile_app/core/error/exceptions.dart';
 import 'package:mobile_app/core/network/api_client.dart';
 import 'package:mobile_app/features/ai_health/infrastructure/models/ai_status_model.dart';
 
-/// Kontrak akses remote AI health.
 abstract class AiHealthRemoteDataSource {
-  /// Ambil snapshot status AI satu kali via REST.
   Future<AiStatusModel> getCurrentStatus();
-
-  /// Stream status AI via SSE (Server-Sent Events).
   Stream<AiStatusModel> streamStatus();
 }
 
@@ -44,19 +40,8 @@ class AiHealthRemoteDataSourceImpl implements AiHealthRemoteDataSource {
   }
 
   // ── SSE ───────────────────────────────────────────────────────────────────
-
-  /// Stream SSE dari `GET /ai/status`.
-  ///
-  /// Menggunakan Dio `ResponseType.stream` untuk membaca byte-by-byte.
-  /// SSE format: setiap event dipisahkan oleh `\n\n`, tiap baris `data: {...}`.
-  ///
-  /// Stream ini akan terus berjalan sampai server menutup koneksi atau
-  /// subscriber melakukan cancel.
   @override
   Stream<AiStatusModel> streamStatus() async* {
-    // final streamController = StreamController<AiStatusModel>();
-
-    // SSE butuh timeout yang panjang — override receiveTimeout
     final options = Options(
       responseType: ResponseType.stream,
       headers: {
@@ -67,7 +52,6 @@ class AiHealthRemoteDataSourceImpl implements AiHealthRemoteDataSource {
       receiveTimeout: const Duration(hours: 1),
     );
 
-    // Bangun URL lengkap agar tidak bergantung pada baseUrl ApiClient
     final url =
         '${EnvConfig.apiBaseUrl}${ApiEndpoints.aiStatusStream}';
 
@@ -90,17 +74,14 @@ class AiHealthRemoteDataSourceImpl implements AiHealthRemoteDataSource {
       );
     }
 
-    // Buffer untuk menampung data yang belum lengkap antar chunks
     final buffer = StringBuffer();
 
     await for (final bytes in byteStream) {
       buffer.write(utf8.decode(bytes, allowMalformed: true));
 
-      // SSE event dipisahkan oleh blank line (\n\n)
       final raw = buffer.toString();
       final parts = raw.split('\n\n');
 
-      // Bagian terakhir mungkin belum lengkap — simpan di buffer
       buffer.clear();
       final incomplete = raw.endsWith('\n\n') ? '' : parts.removeLast();
       if (incomplete.isNotEmpty) buffer.write(incomplete);
@@ -114,9 +95,6 @@ class AiHealthRemoteDataSourceImpl implements AiHealthRemoteDataSource {
 
   // ── Helpers ───────────────────────────────────────────────────────────────
 
-  /// Parse satu blok SSE (beberapa baris sampai blank line) ke [AiStatusModel].
-  ///
-  /// Hanya memproses baris `data: ...`. Baris `event:`, `id:`, `retry:` diabaikan.
   AiStatusModel? _parseSseBlock(String block) {
     if (block.trim().isEmpty) return null;
 
@@ -131,7 +109,6 @@ class AiHealthRemoteDataSourceImpl implements AiHealthRemoteDataSource {
         final json = jsonDecode(jsonStr) as Map<String, dynamic>;
         return AiStatusModel.fromJson(json);
       } catch (_) {
-        // Abaikan baris yang tidak valid JSON
         continue;
       }
     }
@@ -139,8 +116,6 @@ class AiHealthRemoteDataSourceImpl implements AiHealthRemoteDataSource {
     return null;
   }
 
-  /// Periksa status HTTP response secara manual karena ApiClient
-  /// menggunakan `validateStatus: status < 500` (4xx tidak auto-throw).
   void _assertSuccess(Response<dynamic> response) {
     final statusCode = response.statusCode ?? 0;
     if (statusCode >= 400) {

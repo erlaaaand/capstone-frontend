@@ -37,7 +37,7 @@ class AiStatusBanner extends StatelessWidget {
           color: Colors.transparent,
           child: Container(
             width: double.infinity,
-            padding: const EdgeInsets.symmetric(
+            padding: EdgeInsets.symmetric(
               horizontal: AppDimensions.md,
               vertical: AppDimensions.sm,
             ),

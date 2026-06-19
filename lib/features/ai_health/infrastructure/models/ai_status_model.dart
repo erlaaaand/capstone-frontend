@@ -1,20 +1,3 @@
-/// Model JSON dari endpoint `GET /ai/status/current` dan SSE `GET /ai/status`.
-///
-/// NestJS memproxy response FastAPI. Format yang mungkin diterima:
-/// ```json
-/// {
-///   "isAvailable": true,
-///   "status": "online",
-///   "modelLoaded": true,
-///   "uptime": 1234.56,
-///   "message": "FastAPI running",
-///   "classes": ["D101", "D13", "D197", "D2", "D200", "D24"],
-///   "timestamp": "2024-01-01T10:00:00.000Z"
-/// }
-/// ```
-///
-/// Field `status` bisa berupa string (`"online"`, `"offline"`, `"loading"`)
-/// atau boolean `isAvailable`. Keduanya ditangani di [fromJson].
 class AiStatusModel {
   const AiStatusModel({
     required this.isAvailable,
@@ -26,51 +9,40 @@ class AiStatusModel {
     this.classes,
   });
 
-  /// Apakah service tersedia (komposit dari status + modelLoaded).
   final bool isAvailable;
-
-  /// Status string mentah dari server: `"online"`, `"offline"`, `"loading"`.
   final String? statusRaw;
-
   final String? message;
   final bool? modelLoaded;
-
-  /// Uptime dalam detik.
   final double? uptime;
-
-  /// Kelas durian yang didukung (dari FastAPI CLASS_NAMES).
   final List<String>? classes;
-
-  /// Waktu event dari server (ISO 8601). Fallback ke `DateTime.now()`.
   final DateTime timestamp;
 
   factory AiStatusModel.fromJson(Map<String, dynamic> json) {
-    // Resolve status dari berbagai field yang mungkin dikirim server
-    final statusStr = (json['status'] as String?)?.toLowerCase().trim();
+    final rawStatus = json['status'];
+    final statusStr = rawStatus is String ? rawStatus.toLowerCase().trim() : null;
+    
     final isAvailableRaw = json['isAvailable'] ?? json['is_available'];
-    final modelLoaded = json['modelLoaded'] as bool? ?? json['model_loaded'] as bool?;
+    
+    final mlRaw = json['modelLoaded'] ?? json['model_loaded'];
+    final bool? modelLoaded = mlRaw is bool ? mlRaw : 
+                              (mlRaw is String ? mlRaw.toLowerCase() == 'true' : null);
 
-    // Tentukan availability: prioritas field `status`, fallback ke `isAvailable`
     final bool available = switch (statusStr) {
       'online'  => true,
       'offline' => false,
       'loading' => false,
       _         => switch (isAvailableRaw) {
           bool b   => b,
-          String s => s == 'true',
+          String s => s.toLowerCase() == 'true',
           _        => modelLoaded ?? false,
         },
     };
 
-    // Parse timestamp — bisa dari `timestamp`, `lastChecked`, `last_checked`
-    final tsRaw = json['timestamp'] as String? ??
-        json['lastChecked'] as String? ??
-        json['last_checked'] as String?;
-    final timestamp = tsRaw != null
+    final tsRaw = json['timestamp'] ?? json['lastChecked'] ?? json['last_checked'];
+    final timestamp = (tsRaw is String)
         ? DateTime.tryParse(tsRaw) ?? DateTime.now()
         : DateTime.now();
 
-    // Parse uptime — bisa int atau double
     final uptimeRaw = json['uptime'];
     final double? uptime = switch (uptimeRaw) {
       int u    => u.toDouble(),
@@ -79,14 +51,19 @@ class AiStatusModel {
       _        => null,
     };
 
-    // Parse classes list
-    final classesRaw = json['classes'] as List<dynamic>?;
-    final classes = classesRaw?.map((e) => e.toString()).toList();
+    final classesRaw = json['classes'];
+    List<String>? classes;
+    if (classesRaw is List) {
+      classes = classesRaw.map((e) => e.toString()).toList();
+    }
+
+    final rawMessage = json['message'];
+    final String? message = rawMessage is String ? rawMessage : null;
 
     return AiStatusModel(
       isAvailable: available,
       statusRaw: statusStr,
-      message: json['message'] as String?,
+      message: message,
       modelLoaded: modelLoaded,
       uptime: uptime,
       classes: classes,
