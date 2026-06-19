@@ -16,7 +16,7 @@ class AppButton extends StatelessWidget {
     this.isLoading = false,
     this.isFullWidth = true,
     this.icon,
-    this.height = AppDimensions.buttonHeight,
+    this.height,
   });
 
   final String label;
@@ -24,7 +24,7 @@ class AppButton extends StatelessWidget {
   final bool isLoading;
   final bool isFullWidth;
   final IconData? icon;
-  final double height;
+  final double? height;
 
   @override
   Widget build(BuildContext context) {
@@ -53,7 +53,7 @@ class AppButton extends StatelessWidget {
       style: ElevatedButton.styleFrom(
         minimumSize: Size(
           isFullWidth ? double.infinity : AppDimensions.buttonMinWidth,
-          height,
+          height ?? AppDimensions.buttonHeight,
         ),
       ),
       child: child,
@@ -67,7 +67,6 @@ class AppButton extends StatelessWidget {
 // AppOutlinedButton — Outline
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// Tombol outline, dipakai di aksi sekunder (Batal, Pilih Ulang).
 class AppOutlinedButton extends StatelessWidget {
   const AppOutlinedButton({
     super.key,
@@ -76,7 +75,7 @@ class AppOutlinedButton extends StatelessWidget {
     this.isLoading = false,
     this.isFullWidth = true,
     this.icon,
-    this.height = AppDimensions.buttonHeight,
+    this.height,
   });
 
   final String label;
@@ -84,7 +83,7 @@ class AppOutlinedButton extends StatelessWidget {
   final bool isLoading;
   final bool isFullWidth;
   final IconData? icon;
-  final double height;
+  final double? height;
 
   @override
   Widget build(BuildContext context) {
@@ -110,7 +109,7 @@ class AppOutlinedButton extends StatelessWidget {
       style: OutlinedButton.styleFrom(
         minimumSize: Size(
           isFullWidth ? double.infinity : AppDimensions.buttonMinWidth,
-          height,
+          height ?? AppDimensions.buttonHeight,
         ),
       ),
       child: child,
@@ -225,7 +224,7 @@ class AppDestructiveButton extends StatelessWidget {
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.error,
             foregroundColor: AppColors.white,
-            minimumSize: const Size(
+            minimumSize: Size(
               double.infinity,
               AppDimensions.buttonHeight,
             ),

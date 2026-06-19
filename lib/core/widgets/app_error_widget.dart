@@ -89,7 +89,7 @@ class AppErrorWidget extends StatelessWidget {
       );
 
   Widget _buildCompact(BuildContext context) => Container(
-        padding: const EdgeInsets.all(AppDimensions.md),
+        padding: EdgeInsets.all(AppDimensions.md),
         decoration: BoxDecoration(
           color: AppColors.errorLight,
           borderRadius: BorderRadius.circular(AppDimensions.radiusMd),

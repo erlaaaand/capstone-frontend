@@ -67,7 +67,7 @@ class AppTextField extends StatelessWidget {
           TextFormField(
             controller: controller,
             focusNode: focusNode,
-            obscureText: obscureText, // Meneruskan nilai obscureText ke TextFormField
+            obscureText: obscureText,
             onChanged: onChanged,
             onEditingComplete: onEditingComplete,
             validator: validator,
@@ -77,7 +77,7 @@ class AppTextField extends StatelessWidget {
             enabled: enabled,
             readOnly: readOnly,
             autofocus: autofocus,
-            maxLines: obscureText ? 1 : maxLines, // maxLines wajib 1 jika obscureText true
+            maxLines: obscureText ? 1 : maxLines,
             maxLength: maxLength,
             inputFormatters: inputFormatters,
             style: AppTextStyles.bodyMedium,
@@ -147,7 +147,7 @@ class _AppPasswordFieldState extends State<AppPasswordField> {
         textInputAction: widget.textInputAction,
         autofillHints: widget.autofillHints ?? const [AutofillHints.password],
         focusNode: widget.focusNode,
-        obscureText: _obscure, // Diubah menjadi _obscure (mengikuti state)
+        obscureText: _obscure,
         enabled: widget.enabled,
         prefixIcon: Icons.lock_outline_rounded,
         keyboardType: TextInputType.visiblePassword,

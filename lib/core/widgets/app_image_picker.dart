@@ -8,20 +8,11 @@ import 'package:mobile_app/core/theme/app_text_styles.dart';
 import 'package:mobile_app/core/utils/file_utils.dart';
 import 'package:mobile_app/core/utils/image_hash_utils.dart';
 
-/// Bottom sheet pilih gambar — versi upgrade dengan:
-/// - Preview thumbnail gambar yang sudah dipilih sebelumnya
-/// - Informasi ukuran file
-/// - Deteksi duplikasi (hash-based) dengan dialog konfirmasi
-/// - Tips kualitas foto untuk hasil AI terbaik
 class AppImagePickerSheet extends StatelessWidget {
   const AppImagePickerSheet._({this.previousImageHash});
 
   final String? previousImageHash;
 
-  /// Tampilkan sheet pemilihan gambar.
-  ///
-  /// [previousImageHash] — hash gambar terakhir yang berhasil diproses,
-  /// digunakan untuk deteksi duplikasi sebelum upload.
   static Future<File?> show(
     BuildContext context, {
     String? previousImageHash,
@@ -106,7 +97,7 @@ class AppImagePickerSheet extends StatelessWidget {
                 if (context.mounted) Navigator.pop(context, file);
               },
             ),
-            const SizedBox(height: AppDimensions.md),
+            SizedBox(height: AppDimensions.md),
 
             TextButton(
               onPressed: () => Navigator.pop(context),
@@ -183,7 +174,7 @@ class AppImagePickerSheet extends StatelessWidget {
                 color: AppColors.textSecondary,
               ),
             ),
-            const SizedBox(height: AppDimensions.md),
+            SizedBox(height: AppDimensions.md),
             Container(
               padding: const EdgeInsets.all(AppDimensions.sm),
               decoration: BoxDecoration(
@@ -300,7 +291,7 @@ class _SourceTile extends StatelessWidget {
           onTap: onTap,
           borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
           child: Container(
-            padding: const EdgeInsets.all(AppDimensions.md),
+            padding: EdgeInsets.all(AppDimensions.md),
             decoration: BoxDecoration(
               color: Theme.of(context)
                   .colorScheme
@@ -321,7 +312,7 @@ class _SourceTile extends StatelessWidget {
                   ),
                   child: Icon(icon, color: iconColor, size: AppDimensions.iconMd),
                 ),
-                const SizedBox(width: AppDimensions.md),
+                SizedBox(width: AppDimensions.md),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [

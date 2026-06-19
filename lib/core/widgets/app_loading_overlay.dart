@@ -7,16 +7,6 @@ import 'package:flutter/material.dart';
 // AppLoadingOverlay — full screen overlay semi-transparan
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// Gunakan dengan [Stack] untuk menutup seluruh halaman saat loading.
-///
-/// ```dart
-/// Stack(
-///   children: [
-///     MainContent(),
-///     if (isLoading) const AppLoadingOverlay(),
-///   ],
-/// )
-/// ```
 class AppLoadingOverlay extends StatelessWidget {
   const AppLoadingOverlay({super.key, this.message});
 
@@ -40,7 +30,7 @@ class AppLoadingOverlay extends StatelessWidget {
               children: [
                 const CircularProgressIndicator(color: AppColors.primary),
                 if (message != null) ...[
-                  const SizedBox(height: AppDimensions.md),
+                  SizedBox(height: AppDimensions.md),
                   Text(
                     message!,
                     style: AppTextStyles.bodyMedium,
@@ -155,7 +145,7 @@ class AppPredictionLoadingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.all(AppDimensions.md),
+        padding: EdgeInsets.all(AppDimensions.md),
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
@@ -174,7 +164,7 @@ class AppPredictionLoadingCard extends StatelessWidget {
               height: 72,
               borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
             ),
-            const SizedBox(width: AppDimensions.md),
+            SizedBox(width: AppDimensions.md),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

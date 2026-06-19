@@ -1,10 +1,8 @@
-/// Validator untuk form input, sesuai constraint dari Swagger API.
 class Validator {
   Validator._();
 
   // ── Email ─────────────────────────────────────────────────────────────────
 
-  /// Validasi format email. Max 255 karakter (sesuai RegisterDto).
   static String? email(String? value) {
     if (value == null || value.trim().isEmpty) {
       return 'Email tidak boleh kosong.';
@@ -21,9 +19,6 @@ class Validator {
 
   // ── Password ──────────────────────────────────────────────────────────────
 
-  /// Validasi password baru.
-  /// Minimal 8, maksimal 128 karakter.
-  /// Harus mengandung huruf besar, huruf kecil, dan angka (sesuai RegisterDto).
   static String? password(String? value) {
     if (value == null || value.isEmpty) {
       return 'Password tidak boleh kosong.';
@@ -46,7 +41,6 @@ class Validator {
     return null;
   }
 
-  /// Validasi password saat login — hanya cek tidak kosong.
   static String? loginPassword(String? value) {
     if (value == null || value.isEmpty) {
       return 'Password tidak boleh kosong.';
@@ -54,7 +48,6 @@ class Validator {
     return null;
   }
 
-  /// Konfirmasi password — harus cocok dengan [original].
   static String? confirmPassword(String? value, String original) {
     if (value == null || value.isEmpty) {
       return 'Konfirmasi password tidak boleh kosong.';
@@ -67,9 +60,8 @@ class Validator {
 
   // ── Full Name ─────────────────────────────────────────────────────────────
 
-  /// Validasi nama lengkap. Opsional, tapi jika diisi max 100 karakter.
   static String? fullName(String? value) {
-    if (value == null || value.trim().isEmpty) return null; // opsional
+    if (value == null || value.trim().isEmpty) return null;
     if (value.trim().length > 100) {
       return 'Nama lengkap maksimal 100 karakter.';
     }
@@ -78,7 +70,6 @@ class Validator {
 
   // ── Required ─────────────────────────────────────────────────────────────
 
-  /// Field wajib diisi.
   static String? required(String? value, {String fieldName = 'Field'}) {
     if (value == null || value.trim().isEmpty) {
       return '$fieldName tidak boleh kosong.';

@@ -2,10 +2,6 @@ import 'package:mobile_app/core/constants/storage_keys.dart';
 import 'package:mobile_app/core/error/exceptions.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
-/// Abstraksi akses [FlutterSecureStorage] untuk data sensitif (JWT, user info).
-///
-/// Semua operasi di-wrap dengan try-catch agar tidak ada exception mentah
-/// yang bocor ke layer atasnya.
 class SecureStorageService {
   SecureStorageService(this._storage);
 
@@ -41,7 +37,6 @@ class SecureStorageService {
 
   // ── Helpers ──────────────────────────────────────────────────────────────────
 
-  /// Hapus semua data (dipanggil saat logout).
   Future<void> clearAll() async {
     try {
       await _storage.deleteAll(
@@ -53,7 +48,6 @@ class SecureStorageService {
     }
   }
 
-  /// Apakah ada token aktif di storage.
   Future<bool> hasAccessToken() async {
     final token = await getAccessToken();
     return token != null && token.isNotEmpty;

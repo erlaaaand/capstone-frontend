@@ -2,21 +2,9 @@ import 'package:dio/dio.dart';
 import 'package:mobile_app/core/error/exceptions.dart';
 import 'package:mobile_app/core/error/failures.dart';
 
-/// Konversi berbagai tipe [Exception] menjadi [Failure] yang tepat.
-///
-/// Digunakan di setiap repository implementation, di dalam blok `catch`.
-///
-/// ```dart
-/// } on ServerException catch (e) {
-///   return Left(ErrorHandler.fromServerException(e));
-/// } catch (e) {
-///   return Left(ErrorHandler.fromUnknown(e));
-/// }
-/// ```
 class ErrorHandler {
   ErrorHandler._();
 
-  /// Konversi [ServerException] (dari Dio response) ke [Failure].
   static Failure fromServerException(ServerException e) {
     return switch (e.statusCode) {
       400 => ValidationFailure(
@@ -33,7 +21,6 @@ class ErrorHandler {
     };
   }
 
-  /// Konversi [DioException] yang belum dikonversi ke [Failure].
   static Failure fromDioException(DioException e) {
     return switch (e.type) {
       DioExceptionType.connectionTimeout ||
@@ -45,7 +32,6 @@ class ErrorHandler {
     };
   }
 
-  /// Konversi exception generik / unknown ke [Failure].
   static Failure fromUnknown(Object e) {
     if (e is NoInternetException) return const NoInternetFailure();
     if (e is TimeoutException) return const TimeoutFailure();
@@ -56,7 +42,6 @@ class ErrorHandler {
   }
 
   static String _extractEmail(String message) {
-    // Contoh message NestJS: "Email 'x@y.com' sudah digunakan"
     final match = RegExp(r"'([^']+)'").firstMatch(message);
     return match?.group(1) ?? '';
   }

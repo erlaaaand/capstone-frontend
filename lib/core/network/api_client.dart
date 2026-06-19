@@ -5,17 +5,10 @@ import 'package:mobile_app/core/network/auth_interceptor.dart';
 import 'package:mobile_app/core/network/error_interceptor.dart';
 import 'package:mobile_app/core/network/logging_interceptor.dart';
 
-/// Wrapper Dio yang dikonfigurasi untuk API NestJS.
-///
-/// Satu instance dibuat via DI dan dipakai oleh semua data source.
-/// Endpoint SSE (AI Health) menggunakan stream terpisah karena
-/// Dio tidak mendukung SSE natively.
 class ApiClient {
   ApiClient._({required Dio dio}) : _dio = dio;
 
   final Dio _dio;
-
-  /// Base URL backend NestJS (dari env).
   String get baseUrl => EnvConfig.apiBaseUrl;
 
   // ── Factory ──────────────────────────────────────────────────────────────
@@ -32,22 +25,9 @@ class ApiClient {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
       },
-      // Gunakan perilaku default Dio: throw DioException untuk semua
-      // status non-2xx. ErrorInterceptor.onError akan menangkap 4xx (401,
-      // 403, 404, 409, 422, 429) dan mengonversinya ke exception yang tepat.
-      // AuthInterceptor.onError juga dapat mendeteksi 401 untuk logout otomatis.
-      //
-      // JANGAN set validateStatus ke (status) => status < 500 — ini
-      // menyebabkan 4xx lolos sebagai Response sukses dan melewati
-      // seluruh error handling chain.
     );
 
     final dio = Dio(options);
-
-    // Urutan interceptor penting:
-    // 1. Auth  → tambah token ke header SEBELUM request dikirim
-    // 2. Error → konversi response error 4xx/5xx ke exception spesifik
-    // 3. Logger (hanya dev) → log request + response terakhir
     dio.interceptors.addAll([
       authInterceptor,
       ErrorInterceptor(),
@@ -63,11 +43,13 @@ class ApiClient {
     String path, {
     Map<String, dynamic>? queryParameters,
     Options? options,
+    CancelToken? cancelToken,
   }) =>
       _dio.get<T>(
         path,
         queryParameters: queryParameters,
         options: options,
+        cancelToken: cancelToken,
       );
 
   Future<Response<T>> post<T>(
@@ -75,38 +57,46 @@ class ApiClient {
     dynamic data,
     Map<String, dynamic>? queryParameters,
     Options? options,
+    CancelToken? cancelToken,
   }) =>
       _dio.post<T>(
         path,
         data: data,
         queryParameters: queryParameters,
         options: options,
+        cancelToken: cancelToken,
       );
 
   Future<Response<T>> patch<T>(
     String path, {
     dynamic data,
     Options? options,
+    CancelToken? cancelToken,
   }) =>
-      _dio.patch<T>(path, data: data, options: options);
+      _dio.patch<T>(
+        path,
+        data: data,
+        options: options,
+        cancelToken: cancelToken,
+      );
 
   Future<Response<T>> delete<T>(
     String path, {
     Options? options,
+    CancelToken? cancelToken,
   }) =>
-      _dio.delete<T>(path, options: options);
+      _dio.delete<T>(
+        path,
+        options: options,
+        cancelToken: cancelToken,
+      );
 
-  /// Upload file menggunakan [FormData] (multipart/form-data).
-  ///
-  /// [onSendProgress] untuk menampilkan progress bar upload.
-  /// Prediction creation endpoint mungkin perlu receiveTimeout lebih panjang
-  /// karena AI processing berjalan async di server — gunakan [options] untuk
-  /// override jika diperlukan per-call.
   Future<Response<T>> postMultipart<T>(
     String path, {
     required FormData formData,
     void Function(int sent, int total)? onSendProgress,
     Options? options,
+    CancelToken? cancelToken,
   }) =>
       _dio.post<T>(
         path,
@@ -116,8 +106,8 @@ class ApiClient {
               contentType: 'multipart/form-data',
             ),
         onSendProgress: onSendProgress,
+        cancelToken: cancelToken,
       );
 
-  /// Akses raw Dio untuk kebutuhan khusus (mis. cancel token).
   Dio get raw => _dio;
 }

@@ -15,7 +15,6 @@ import 'package:mobile_app/features/auth/presentation/pages/register_page.dart';
 // ── Feature: Prediction ───────────────────────────────────────────────────────
 import 'package:mobile_app/features/prediction/application/create_prediction/create_prediction_bloc.dart';
 import 'package:mobile_app/features/prediction/application/prediction_list/prediction_list_bloc.dart';
-import 'package:mobile_app/features/prediction/domain/entities/prediction.dart';
 import 'package:mobile_app/features/prediction/presentation/pages/scan_page.dart';
 import 'package:mobile_app/features/prediction/presentation/pages/prediction_history_page.dart';
 import 'package:mobile_app/features/prediction/presentation/pages/prediction_result_page.dart';
@@ -27,21 +26,6 @@ import 'package:mobile_app/features/user/presentation/pages/profile_page.dart';
 // ── Feature: AI Health ────────────────────────────────────────────────────────
 import 'package:mobile_app/features/ai_health/application/ai_health_cubit.dart';
 
-/// Konfigurasi navigasi aplikasi menggunakan [GoRouter].
-///
-/// Struktur rute:
-/// ```
-/// /                      → SplashPage (cek sesi)
-/// /login                 → LoginPage
-/// /register              → RegisterPage
-/// /app/scan              → ScanPage          ─┐
-/// /app/scan/result/:id   → PredictionResultPage │ ShellRoute
-/// /app/history           → PredictionHistoryPage │ (BottomNav)
-/// /app/profile           → ProfilePage        ─┘
-/// ```
-///
-/// AuthBloc di-provide di root (App widget), sehingga semua halaman
-/// dapat mengakses tanpa BlocProvider tambahan.
 class AppRouter {
   AppRouter(this._guard);
 
@@ -53,7 +37,6 @@ class AppRouter {
     redirect: (context, state) => _guard.redirect(state),
     routes: [
       // ── Splash ─────────────────────────────────────────────────────────────
-      // AuthBloc diakses via context.read<AuthBloc>() dari provider di root.
       GoRoute(
         path: RoutePaths.splash,
         name: RouteNames.splash,
@@ -61,8 +44,6 @@ class AppRouter {
       ),
 
       // ── Auth ────────────────────────────────────────────────────────────────
-      // LoginPage & RegisterPage menggunakan BlocConsumer<AuthBloc> —
-      // AuthBloc sudah tersedia dari MultiBlocProvider di App widget.
       GoRoute(
         path: RoutePaths.login,
         name: RouteNames.login,
@@ -75,9 +56,6 @@ class AppRouter {
       ),
 
       // ── Main Shell ─────────────────────────────────────────────────────────
-      // ShellRoute membungkus semua halaman yang memerlukan BottomNavigationBar.
-      // AiHealthCubit di-provide di sini agar status AI tersedia selama
-      // user berada di dalam shell (scan, riwayat, profil).
       ShellRoute(
         builder: (context, state, child) => BlocProvider<AiHealthCubit>(
           create: (_) => sl<AiHealthCubit>()
@@ -98,16 +76,13 @@ class AppRouter {
               child: const ScanPage(),
             ),
             routes: [
-              // Sub-route: hasil prediksi (dapat diakses dari scan & history)
               GoRoute(
                 path: 'result/:predictionId',
                 name: RouteNames.predictionResult,
                 builder: (context, state) {
                   final id = state.pathParameters['predictionId'] ?? '';
-                  final prediction = state.extra as Prediction?;
                   return PredictionResultPage(
                     predictionId: id,
-                    prediction: prediction,
                   );
                 },
               ),
@@ -125,9 +100,6 @@ class AppRouter {
           ),
 
           // ── Profile ───────────────────────────────────────────────────────
-          // ProfileBloc di-provide per-route (factory) agar fresh setiap
-          // kali halaman dibuka. ProfilePage.initState akan dispatch
-          // ProfileLoadRequested secara otomatis.
           GoRoute(
             path: RoutePaths.profile,
             name: RouteNames.profile,
@@ -170,14 +142,6 @@ class AppRouter {
 }
 
 // ── Shell Scaffold ─────────────────────────────────────────────────────────────
-
-/// Scaffold utama yang membungkus halaman-halaman dalam ShellRoute.
-///
-/// Menampilkan [NavigationBar] di bagian bawah dan meng-highlight tab
-/// yang sesuai berdasarkan [location] saat ini.
-///
-/// Navigasi antar tab dilakukan via [GoRouter.goNamed] sehingga GoRouter
-/// mengelola back stack dengan benar.
 class _ShellScaffold extends StatelessWidget {
   const _ShellScaffold({
     required this.location,

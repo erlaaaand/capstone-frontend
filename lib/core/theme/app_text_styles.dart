@@ -1,10 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_app/core/theme/app_colors.dart';
 
-/// TextStyle standar aplikasi.
-///
-/// Gunakan via `Theme.of(context).textTheme` di widget,
-/// atau konstanta ini untuk kasus khusus di luar theme.
 abstract class AppTextStyles {
   // ── Display ───────────────────────────────────────────────────────────────
   static const displayLarge = TextStyle(

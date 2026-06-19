@@ -15,8 +15,6 @@ abstract class AppTheme {
           onPrimary: AppColors.white,
           secondary: AppColors.secondary,
           onSecondary: AppColors.white,
-          // 'background' dihapus — deprecated sejak Flutter 3.18.
-          // Gunakan 'surface' yang sudah mencakup keduanya di Material 3.
           surface: AppColors.surface,
           onSurface: AppColors.textPrimary,
           error: AppColors.error,
@@ -63,13 +61,12 @@ abstract class AppTheme {
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.primary,
             foregroundColor: AppColors.white,
-            minimumSize: const Size(
+            minimumSize: Size(
               AppDimensions.buttonMinWidth,
               AppDimensions.buttonHeight,
             ),
             shape: RoundedRectangleBorder(
-              borderRadius:
-                  BorderRadius.circular(AppDimensions.radiusMd),
+              borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
             ),
             elevation: 0,
             textStyle: AppTextStyles.labelLarge.copyWith(fontSize: 16),
@@ -80,13 +77,12 @@ abstract class AppTheme {
         outlinedButtonTheme: OutlinedButtonThemeData(
           style: OutlinedButton.styleFrom(
             foregroundColor: AppColors.primary,
-            minimumSize: const Size(
+            minimumSize: Size(
               AppDimensions.buttonMinWidth,
               AppDimensions.buttonHeight,
             ),
             shape: RoundedRectangleBorder(
-              borderRadius:
-                  BorderRadius.circular(AppDimensions.radiusMd),
+              borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
             ),
             side: const BorderSide(color: AppColors.primary, width: 1.5),
             textStyle: AppTextStyles.labelLarge.copyWith(fontSize: 16),
@@ -105,7 +101,7 @@ abstract class AppTheme {
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
           fillColor: AppColors.surfaceAlt,
-          contentPadding: const EdgeInsets.symmetric(
+          contentPadding: EdgeInsets.symmetric(
             horizontal: AppDimensions.md,
             vertical: AppDimensions.md,
           ),
@@ -115,28 +111,23 @@ abstract class AppTheme {
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
-            borderSide: const BorderSide(
-                color: AppColors.divider, width: 1),
+            borderSide: const BorderSide(color: AppColors.divider, width: 1),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
-            borderSide: const BorderSide(
-                color: AppColors.primary, width: 2),
+            borderSide: const BorderSide(color: AppColors.primary, width: 2),
           ),
           errorBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
-            borderSide: const BorderSide(
-                color: AppColors.error, width: 1),
+            borderSide: const BorderSide(color: AppColors.error, width: 1),
           ),
           focusedErrorBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
-            borderSide: const BorderSide(
-                color: AppColors.error, width: 2),
+            borderSide: const BorderSide(color: AppColors.error, width: 2),
           ),
-          hintStyle: AppTextStyles.bodyMedium.copyWith(
-              color: AppColors.textHint),
-          errorStyle: AppTextStyles.bodySmall.copyWith(
-              color: AppColors.error),
+          hintStyle:
+              AppTextStyles.bodyMedium.copyWith(color: AppColors.textHint),
+          errorStyle: AppTextStyles.bodySmall.copyWith(color: AppColors.error),
         ),
 
         // ── Card ─────────────────────────────────────────────────────────────
@@ -169,56 +160,121 @@ abstract class AppTheme {
 
         // ── Text ──────────────────────────────────────────────────────────────
         textTheme: const TextTheme(
-          displayLarge:   AppTextStyles.displayLarge,
-          displayMedium:  AppTextStyles.displayMedium,
-          headlineLarge:  AppTextStyles.headlineLarge,
+          displayLarge: AppTextStyles.displayLarge,
+          displayMedium: AppTextStyles.displayMedium,
+          headlineLarge: AppTextStyles.headlineLarge,
           headlineMedium: AppTextStyles.headlineMedium,
-          headlineSmall:  AppTextStyles.headlineSmall,
-          titleLarge:     AppTextStyles.titleLarge,
-          titleMedium:    AppTextStyles.titleMedium,
-          bodyLarge:      AppTextStyles.bodyLarge,
-          bodyMedium:     AppTextStyles.bodyMedium,
-          bodySmall:      AppTextStyles.bodySmall,
-          labelLarge:     AppTextStyles.labelLarge,
-          labelMedium:    AppTextStyles.labelMedium,
-          labelSmall:     AppTextStyles.labelSmall,
+          headlineSmall: AppTextStyles.headlineSmall,
+          titleLarge: AppTextStyles.titleLarge,
+          titleMedium: AppTextStyles.titleMedium,
+          bodyLarge: AppTextStyles.bodyLarge,
+          bodyMedium: AppTextStyles.bodyMedium,
+          bodySmall: AppTextStyles.bodySmall,
+          labelLarge: AppTextStyles.labelLarge,
+          labelMedium: AppTextStyles.labelMedium,
+          labelSmall: AppTextStyles.labelSmall,
         ),
       );
 
   // ── Dark ──────────────────────────────────────────────────────────────────
-  static ThemeData get dark => light.copyWith(
-        brightness: Brightness.dark,
-        scaffoldBackgroundColor: AppColors.darkBackground,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: AppColors.primary,
-          brightness: Brightness.dark,
-          primary: AppColors.primaryLight,
-          onPrimary: AppColors.darkBackground,
-          secondary: AppColors.secondaryLight,
-          onSecondary: AppColors.darkBackground,
-          // 'background' dihapus — deprecated sejak Flutter 3.18.
-          surface: AppColors.darkSurface,
-          onSurface: Colors.white,
-          error: const Color(0xFFEF9A9A),
-          onError: AppColors.darkBackground,
+  static ThemeData get dark {
+    // 1. Definisikan ColorScheme untuk Dark Mode
+    final darkColorScheme = ColorScheme.fromSeed(
+      seedColor: AppColors.primary,
+      brightness: Brightness.dark,
+      primary: AppColors.primaryLight,
+      onPrimary: AppColors.darkBackground,
+      secondary: AppColors.secondaryLight,
+      onSecondary: AppColors.darkBackground,
+      surface: AppColors.darkSurface,
+      onSurface: Colors.white,
+      error: const Color(0xFFEF9A9A),
+      onError: AppColors.darkBackground,
+    );
+
+    // 2. Override TextTheme dari light agar seluruh teks menjadi putih/terang
+    final darkTextTheme = light.textTheme.apply(
+      bodyColor: Colors.white,
+      displayColor: Colors.white,
+      decorationColor: Colors.white70,
+    );
+
+    // 3. Gabungkan menjadi ThemeData gelap yang utuh
+    return light.copyWith(
+      brightness: Brightness.dark,
+      scaffoldBackgroundColor: AppColors.darkBackground,
+      colorScheme: darkColorScheme,
+      textTheme: darkTextTheme,
+
+      // Override AppBar
+      appBarTheme: const AppBarTheme(
+        backgroundColor: AppColors.darkSurface,
+        foregroundColor: Colors.white,
+        elevation: 0,
+        centerTitle: false,
+        titleTextStyle: TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.w600,
+          color: Colors.white,
         ),
-        appBarTheme: const AppBarTheme(
-          backgroundColor: AppColors.darkSurface,
-          foregroundColor: Colors.white,
-          elevation: 0,
-          systemOverlayStyle: SystemUiOverlayStyle(
-            statusBarColor: Colors.transparent,
-            statusBarIconBrightness: Brightness.light,
-            statusBarBrightness: Brightness.dark,
-          ),
+        systemOverlayStyle: SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: Brightness.light,
+          statusBarBrightness: Brightness.dark,
         ),
-        cardTheme: CardTheme(
-          color: AppColors.darkSurface,
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
-          ),
-          margin: EdgeInsets.zero,
+      ),
+
+      // Override Card
+      cardTheme: CardTheme(
+        color: AppColors.darkSurface,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
         ),
-      );
+        margin: EdgeInsets.zero,
+      ),
+
+      // Override Input Field
+      inputDecorationTheme: light.inputDecorationTheme.copyWith(
+        fillColor: AppColors.darkSurfaceAlt,
+        hintStyle: AppTextStyles.bodyMedium.copyWith(color: Colors.white54),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+          borderSide: const BorderSide(color: Colors.white24, width: 1),
+        ),
+      ),
+
+      // Override Bottom Navigation Bar
+      navigationBarTheme: light.navigationBarTheme.copyWith(
+        backgroundColor: AppColors.darkSurface,
+        indicatorColor: AppColors.primaryDark.withAlpha(80),
+        iconTheme: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return const IconThemeData(color: AppColors.primaryLight, size: 24);
+          }
+          return const IconThemeData(color: Colors.white54, size: 24);
+        }),
+        labelTextStyle: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return AppTextStyles.labelMedium
+                .copyWith(color: AppColors.primaryLight);
+          }
+          return AppTextStyles.labelMedium.copyWith(color: Colors.white54);
+        }),
+      ),
+
+      // Override Chip
+      chipTheme: light.chipTheme.copyWith(
+        backgroundColor: AppColors.darkSurfaceAlt,
+        labelStyle: AppTextStyles.labelMedium.copyWith(color: Colors.white),
+      ),
+
+      // Override Divider
+      dividerTheme: const DividerThemeData(
+        color: Colors.white12,
+        thickness: 1,
+        space: 1,
+      ),
+    );
+  }
 }

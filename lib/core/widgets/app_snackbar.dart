@@ -48,7 +48,7 @@ class AppSnackBar {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
           ),
-          margin: const EdgeInsets.all(AppDimensions.md),
+          margin: EdgeInsets.all(AppDimensions.md),
           action: actionLabel != null
               ? SnackBarAction(
                   label: actionLabel,
