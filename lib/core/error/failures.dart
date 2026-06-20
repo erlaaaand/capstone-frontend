@@ -1,9 +1,9 @@
 import 'package:equatable/equatable.dart';
+import 'package:mobile_app/core/constants/app_constants.dart';
+
 sealed class Failure extends Equatable {
   const Failure(this.message);
-
   final String message;
-
   @override
   List<Object?> get props => [message];
 }
@@ -14,20 +14,21 @@ class NoInternetFailure extends Failure {
       : super('Tidak ada koneksi internet. Periksa jaringan Anda.');
 }
 
-/// Request timeout.
 class TimeoutFailure extends Failure {
   const TimeoutFailure() : super('Koneksi ke server timeout. Coba lagi.');
 }
 
+class RequestCancelledFailure extends Failure {
+  const RequestCancelledFailure() : super('Permintaan dibatalkan.');
+}
+
 // ── Auth Failures ─────────────────────────────────────────────────────────────
 class InvalidCredentialsFailure extends Failure {
-  const InvalidCredentialsFailure()
-      : super('Email atau password tidak valid.');
+  const InvalidCredentialsFailure() : super('Email atau password tidak valid.');
 }
 
 class UnauthorizedFailure extends Failure {
-  const UnauthorizedFailure()
-      : super('Sesi berakhir, silakan login kembali.');
+  const UnauthorizedFailure() : super('Sesi berakhir, silakan login kembali.');
 }
 
 class EmailAlreadyUsedFailure extends Failure {
@@ -42,8 +43,7 @@ class ValidationFailure extends Failure {
       ValidationFailure(message: errors.join('\n'));
 }
 
-// ── User Failures ─────────────────────────────────────────────────────────────
-
+// ── Resource Failures ──────────────────────────────────────────────────────────
 class UserNotFoundFailure extends Failure {
   const UserNotFoundFailure() : super('User tidak ditemukan.');
 }
@@ -53,11 +53,17 @@ class ForbiddenFailure extends Failure {
       : super('Anda tidak memiliki izin untuk melakukan aksi ini.');
 }
 
-// ── Storage Failures ──────────────────────────────────────────────────────────
+class NotFoundFailure extends Failure {
+  const NotFoundFailure({required String message}) : super(message);
+}
 
+// ── Storage Failures ──────────────────────────────────────────────────────────
 class FileTooLargeFailure extends Failure {
   const FileTooLargeFailure()
-      : super('Ukuran file melebihi batas 5MB. Pilih gambar yang lebih kecil.');
+      : super(
+          'Ukuran file melebihi batas ${AppConstants.maxUploadSizeMb}MB. '
+          'Pilih gambar yang lebih kecil.',
+        );
 }
 
 class UnsupportedFileFailure extends Failure {

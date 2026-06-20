@@ -37,7 +37,6 @@ class ErrorHandler {
     if (e is TimeoutException) return const TimeoutFailure();
     if (e is StorageAccessException) return ServerFailure(message: e.message);
     if (e is InvalidFileException) return InvalidFileFailure(message: e.message);
-    if (e is PredictionTimeoutException) return const PredictionTimeoutFailure();
     return const UnexpectedFailure();
   }
 

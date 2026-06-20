@@ -1,5 +1,6 @@
 import 'package:mobile_app/core/constants/storage_keys.dart';
 import 'package:mobile_app/core/error/exceptions.dart';
+import 'package:mobile_app/core/utils/image_hash_utils.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class SecureStorageService {
@@ -7,42 +8,25 @@ class SecureStorageService {
 
   final FlutterSecureStorage _storage;
 
-  static const _androidOptions = AndroidOptions(
-    encryptedSharedPreferences: true,
-  );
-
-  static const _iosOptions = IOSOptions(
-    accessibility: KeychainAccessibility.first_unlock,
-  );
+  static const _androidOptions = AndroidOptions(encryptedSharedPreferences: true);
+  static const _iosOptions = IOSOptions(accessibility: KeychainAccessibility.first_unlock);
 
   // ── Token ───────────────────────────────────────────────────────────────────
-
-  Future<void> saveAccessToken(String token) =>
-      _write(StorageKeys.accessToken, token);
-
+  Future<void> saveAccessToken(String token) => _write(StorageKeys.accessToken, token);
   Future<String?> getAccessToken() => _read(StorageKeys.accessToken);
-
   Future<void> deleteAccessToken() => _delete(StorageKeys.accessToken);
 
   // ── User Session ─────────────────────────────────────────────────────────────
-
   Future<void> saveUserId(String id) => _write(StorageKeys.userId, id);
-
   Future<String?> getUserId() => _read(StorageKeys.userId);
-
-  Future<void> saveUserEmail(String email) =>
-      _write(StorageKeys.userEmail, email);
-
+  Future<void> saveUserEmail(String email) => _write(StorageKeys.userEmail, email);
   Future<String?> getUserEmail() => _read(StorageKeys.userEmail);
 
   // ── Helpers ──────────────────────────────────────────────────────────────────
-
   Future<void> clearAll() async {
     try {
-      await _storage.deleteAll(
-        aOptions: _androidOptions,
-        iOptions: _iosOptions,
-      );
+      await _storage.deleteAll(aOptions: _androidOptions, iOptions: _iosOptions);
+      LastImageHashCache.clear();
     } catch (e) {
       throw StorageAccessException(message: 'Gagal menghapus sesi: $e');
     }
@@ -53,16 +37,9 @@ class SecureStorageService {
     return token != null && token.isNotEmpty;
   }
 
-  // ── Internal ─────────────────────────────────────────────────────────────────
-
   Future<void> _write(String key, String value) async {
     try {
-      await _storage.write(
-        key: key,
-        value: value,
-        aOptions: _androidOptions,
-        iOptions: _iosOptions,
-      );
+      await _storage.write(key: key, value: value, aOptions: _androidOptions, iOptions: _iosOptions);
     } catch (e) {
       throw StorageAccessException(message: 'Gagal menyimpan $key: $e');
     }
@@ -70,11 +47,7 @@ class SecureStorageService {
 
   Future<String?> _read(String key) async {
     try {
-      return await _storage.read(
-        key: key,
-        aOptions: _androidOptions,
-        iOptions: _iosOptions,
-      );
+      return await _storage.read(key: key, aOptions: _androidOptions, iOptions: _iosOptions);
     } catch (e) {
       throw StorageAccessException(message: 'Gagal membaca $key: $e');
     }
@@ -82,11 +55,7 @@ class SecureStorageService {
 
   Future<void> _delete(String key) async {
     try {
-      await _storage.delete(
-        key: key,
-        aOptions: _androidOptions,
-        iOptions: _iosOptions,
-      );
+      await _storage.delete(key: key, aOptions: _androidOptions, iOptions: _iosOptions);
     } catch (e) {
       throw StorageAccessException(message: 'Gagal menghapus $key: $e');
     }

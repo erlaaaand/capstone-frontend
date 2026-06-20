@@ -1,3 +1,5 @@
+import 'package:mobile_app/core/constants/app_constants.dart';
+
 // ── Network ──────────────────────────────────────────────────────────────────
 class ServerException implements Exception {
   const ServerException({
@@ -39,7 +41,8 @@ class ConflictException extends ServerException {
 
 class FileTooLargeException extends ServerException {
   const FileTooLargeException({
-    super.message = 'Ukuran file melebihi batas 5MB.',
+    super.message =
+        'Ukuran file melebihi batas ${AppConstants.maxUploadSizeMb}MB.',
   }) : super(statusCode: 413);
 }
 
@@ -56,17 +59,14 @@ class RateLimitException extends ServerException {
 }
 
 // ── Network Connectivity ─────────────────────────────────────────────────────
-
 class NoInternetException implements Exception {
   const NoInternetException();
-
   @override
   String toString() => 'NoInternetException: Tidak ada koneksi internet.';
 }
 
 class TimeoutException implements Exception {
   const TimeoutException();
-
   @override
   String toString() => 'TimeoutException: Koneksi ke server timeout.';
 }
@@ -74,9 +74,7 @@ class TimeoutException implements Exception {
 // ── Local / Cache ─────────────────────────────────────────────────────────────
 class StorageAccessException implements Exception {
   const StorageAccessException({required this.message});
-
   final String message;
-
   @override
   String toString() => 'StorageAccessException: $message';
 }
@@ -84,18 +82,7 @@ class StorageAccessException implements Exception {
 // ── File ─────────────────────────────────────────────────────────────────────
 class InvalidFileException implements Exception {
   const InvalidFileException({required this.message});
-
   final String message;
-
   @override
   String toString() => 'InvalidFileException: $message';
-}
-
-// ── Prediction ────────────────────────────────────────────────────────────────
-class PredictionTimeoutException implements Exception {
-  const PredictionTimeoutException();
-
-  @override
-  String toString() =>
-      'PredictionTimeoutException: Prediksi tidak selesai dalam waktu yang ditentukan.';
 }

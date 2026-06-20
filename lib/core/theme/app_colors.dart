@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
 
-/// Palet warna aplikasi Durian Classifier.
-///
-/// Identitas visual: warna durian (kuning-emas) + hijau tropis + putih bersih.
 abstract class AppColors {
   // ── Brand ─────────────────────────────────────────────────────────────────
-  /// Warna utama — kuning-emas durian.
+  /// Warna utama
   static const primary      = Color(0xFFE5A020);
   static const primaryLight = Color(0xFFF5C842);
   static const primaryDark  = Color(0xFFB87D10);
@@ -17,7 +14,7 @@ abstract class AppColors {
 
   // ── Neutrals ──────────────────────────────────────────────────────────────
   static const white      = Color(0xFFFFFFFF);
-  static const background = Color(0xFFF8F5EE);  // krem hangat
+  static const background = Color(0xFFF8F5EE);
   static const surface    = Color(0xFFFFFFFF);
   static const surfaceAlt = Color(0xFFF2EDE3);
 
@@ -49,7 +46,7 @@ abstract class AppColors {
   static const aiOffline = Color(0xFFB71C1C);
 
   // ── Confidence Score Gradient ─────────────────────────────────────────────
-  /// Gradient warna gauge confidence: merah (rendah) → kuning → hijau (tinggi)
+  /// Gradient warna gauge confidence
   static const confidenceLow    = Color(0xFFE53935);  // < 0.5
   static const confidenceMedium = Color(0xFFFFB300);  // 0.5 – 0.8
   static const confidenceHigh   = Color(0xFF43A047);  // > 0.8

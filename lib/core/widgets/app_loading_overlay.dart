@@ -4,7 +4,7 @@ import 'package:mobile_app/core/theme/app_text_styles.dart';
 import 'package:flutter/material.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// AppLoadingOverlay — full screen overlay semi-transparan
+// AppLoadingOverlay — full screen overlay
 // ─────────────────────────────────────────────────────────────────────────────
 
 class AppLoadingOverlay extends StatelessWidget {
@@ -30,7 +30,7 @@ class AppLoadingOverlay extends StatelessWidget {
               children: [
                 const CircularProgressIndicator(color: AppColors.primary),
                 if (message != null) ...[
-                  SizedBox(height: AppDimensions.md),
+                  const SizedBox(height: AppDimensions.md),
                   Text(
                     message!,
                     style: AppTextStyles.bodyMedium,
@@ -75,7 +75,6 @@ class AppLoadingIndicator extends StatelessWidget {
 // AppShimmer — skeleton loading placeholder
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// Blok abu-abu beranimasi untuk placeholder saat data belum tersedia.
 class AppShimmer extends StatefulWidget {
   const AppShimmer({
     super.key,
@@ -137,7 +136,7 @@ class _AppShimmerState extends State<AppShimmer>
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// AppPredictionLoadingCard — skeleton spesifik untuk card prediksi
+// AppPredictionLoadingCard
 // ─────────────────────────────────────────────────────────────────────────────
 
 class AppPredictionLoadingCard extends StatelessWidget {
@@ -145,7 +144,7 @@ class AppPredictionLoadingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        padding: EdgeInsets.all(AppDimensions.md),
+        padding: const EdgeInsets.all(AppDimensions.md),
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
@@ -164,7 +163,7 @@ class AppPredictionLoadingCard extends StatelessWidget {
               height: 72,
               borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
             ),
-            SizedBox(width: AppDimensions.md),
+            const SizedBox(width: AppDimensions.md),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

@@ -9,7 +9,6 @@ class AuthInterceptor extends Interceptor {
         _onUnauthorized = onUnauthorized;
 
   final SecureStorageService _secureStorage;
-
   final void Function() _onUnauthorized;
 
   @override
@@ -18,18 +17,20 @@ class AuthInterceptor extends Interceptor {
     RequestInterceptorHandler handler,
   ) async {
     final token = await _secureStorage.getAccessToken();
-
     if (token != null && token.isNotEmpty) {
       options.headers['Authorization'] = 'Bearer $token';
     }
-
     return handler.next(options);
   }
 
   @override
-  void onError(DioException err, ErrorInterceptorHandler handler) {
+  Future<void> onError(
+    DioException err,
+    ErrorInterceptorHandler handler,
+  ) async {
     if (err.response?.statusCode == 401) {
-      _secureStorage.clearAll().then((_) => _onUnauthorized());
+      await _secureStorage.clearAll();
+      _onUnauthorized();
     }
     return handler.next(err);
   }

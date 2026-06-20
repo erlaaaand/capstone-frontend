@@ -9,7 +9,6 @@ class FileUtils {
   FileUtils._();
 
   static void validateImage(File file) {
-    // Cek file exists
     if (!file.existsSync()) {
       throw const InvalidFileException(message: 'File tidak ditemukan.');
     }
@@ -21,7 +20,8 @@ class FileUtils {
     if (sizeBytes > AppConstants.maxUploadSizeBytes) {
       final sizeMb = (sizeBytes / (1024 * 1024)).toStringAsFixed(2);
       throw InvalidFileException(
-        message: 'Ukuran file ${sizeMb}MB melebihi batas 5MB.',
+        message: 'Ukuran file ${sizeMb}MB melebihi batas '
+            '${AppConstants.maxUploadSizeMb}MB.',
       );
     }
 
@@ -43,7 +43,7 @@ class FileUtils {
   static String? getMimeType(String filePath) => lookupMimeType(filePath);
 
   static String formatFileSize(int bytes) {
-    if (bytes < 1024)        return '$bytes B';
+    if (bytes < 1024) return '$bytes B';
     if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
     return '${(bytes / (1024 * 1024)).toStringAsFixed(2)} MB';
   }

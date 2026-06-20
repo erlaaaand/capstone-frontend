@@ -7,7 +7,6 @@ import 'package:flutter/material.dart';
 // AppButton — Primary
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// Tombol utama kuning-emas, dipakai di aksi primer (Login, Scan, Simpan).
 class AppButton extends StatelessWidget {
   const AppButton({
     super.key,
@@ -123,7 +122,6 @@ class AppOutlinedButton extends StatelessWidget {
 // AppTextButton
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// Tombol teks tanpa background, untuk link / aksi tersier.
 class AppTextButton extends StatelessWidget {
   const AppTextButton({
     super.key,
@@ -155,7 +153,6 @@ class AppTextButton extends StatelessWidget {
 // AppIconButton
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// Tombol ikon bulat dengan background subtle.
 class AppIconButton extends StatelessWidget {
   const AppIconButton({
     super.key,
@@ -199,7 +196,7 @@ class AppIconButton extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// AppDestructiveButton — merah, untuk hapus
+// AppDestructiveButton
 // ─────────────────────────────────────────────────────────────────────────────
 
 class AppDestructiveButton extends StatelessWidget {
@@ -224,7 +221,7 @@ class AppDestructiveButton extends StatelessWidget {
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.error,
             foregroundColor: AppColors.white,
-            minimumSize: Size(
+            minimumSize: const Size(
               double.infinity,
               AppDimensions.buttonHeight,
             ),

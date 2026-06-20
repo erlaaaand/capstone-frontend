@@ -6,7 +6,7 @@ import 'package:mobile_app/core/widgets/app_button.dart';
 import 'package:flutter/material.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// AppErrorWidget — tampilan error generik dengan tombol retry
+// AppErrorWidget
 // ─────────────────────────────────────────────────────────────────────────────
 
 class AppErrorWidget extends StatelessWidget {
@@ -20,10 +20,8 @@ class AppErrorWidget extends StatelessWidget {
   final Failure failure;
   final VoidCallback? onRetry;
 
-  /// Mode compact untuk inline error (bukan full screen).
   final bool compact;
 
-  /// Pilih icon berdasarkan tipe failure.
   IconData get _icon => switch (failure) {
         NoInternetFailure()  => Icons.wifi_off_rounded,
         TimeoutFailure()     => Icons.timer_off_outlined,
@@ -61,7 +59,7 @@ class AppErrorWidget extends StatelessWidget {
                 child: Icon(_icon, color: _iconColor, size: 40),
               ),
               const SizedBox(height: AppDimensions.lg),
-              Text(
+              const Text(
                 'Terjadi Kesalahan',
                 style: AppTextStyles.headlineSmall,
                 textAlign: TextAlign.center,
@@ -89,7 +87,7 @@ class AppErrorWidget extends StatelessWidget {
       );
 
   Widget _buildCompact(BuildContext context) => Container(
-        padding: EdgeInsets.all(AppDimensions.md),
+        padding: const EdgeInsets.all(AppDimensions.md),
         decoration: BoxDecoration(
           color: AppColors.errorLight,
           borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
@@ -119,7 +117,7 @@ class AppErrorWidget extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// AppEmptyWidget — empty state saat list kosong
+// AppEmptyWidget
 // ─────────────────────────────────────────────────────────────────────────────
 
 class AppEmptyWidget extends StatelessWidget {
@@ -185,7 +183,7 @@ class AppEmptyWidget extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// AppNoInternetWidget — khusus no-internet
+// AppNoInternetWidget
 // ─────────────────────────────────────────────────────────────────────────────
 
 class AppNoInternetWidget extends StatelessWidget {

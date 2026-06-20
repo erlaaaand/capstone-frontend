@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// AppTextField — text input standar
+// AppTextField
 // ─────────────────────────────────────────────────────────────────────────────
 
 class AppTextField extends StatelessWidget {
@@ -100,7 +100,7 @@ class AppTextField extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// AppPasswordField — text field dengan toggle show/hide
+// AppPasswordField
 // ─────────────────────────────────────────────────────────────────────────────
 
 class AppPasswordField extends StatefulWidget {
@@ -166,7 +166,7 @@ class _AppPasswordFieldState extends State<AppPasswordField> {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// AppSearchField — search bar ringan tanpa border bawah
+// AppSearchField
 // ─────────────────────────────────────────────────────────────────────────────
 
 class AppSearchField extends StatelessWidget {

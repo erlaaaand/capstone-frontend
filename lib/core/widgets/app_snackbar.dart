@@ -5,12 +5,6 @@ import 'package:flutter/material.dart';
 
 enum SnackBarType { success, error, warning, info }
 
-/// Helper untuk menampilkan snackbar yang konsisten di seluruh app.
-///
-/// ```dart
-/// AppSnackBar.show(context, 'Login berhasil!', type: SnackBarType.success);
-/// AppSnackBar.showError(context, failure.message);
-/// ```
 class AppSnackBar {
   AppSnackBar._();
 
@@ -48,7 +42,7 @@ class AppSnackBar {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
           ),
-          margin: EdgeInsets.all(AppDimensions.md),
+          margin: const EdgeInsets.all(AppDimensions.md),
           action: actionLabel != null
               ? SnackBarAction(
                   label: actionLabel,

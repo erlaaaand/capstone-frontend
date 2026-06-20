@@ -4,22 +4,18 @@ class EnvConfig {
   EnvConfig._();
 
   // ── Backend NestJS ──────────────────────────────────────────────────────────
-
   static String get apiBaseUrl => _require('API_BASE_URL');
   static String get appBaseUrl => _require('APP_BASE_URL');
 
   // ── AI FastAPI Microservice ─────────────────────────────────────────────────
-
   static String get fastapiBaseUrl => _require('FASTAPI_BASE_URL');
   static String get fastapiApiKey => _require('FASTAPI_API_KEY');
 
   // ── Storage ─────────────────────────────────────────────────────────────────
-
   static String get storageProvider => _get('STORAGE_PROVIDER', 'local');
   static bool get isS3Storage => storageProvider == 's3';
 
   // ── Durian Classes ──────────────────────────────────────────────────────────
-
   static List<String> get durianClasses =>
       _get('DURIAN_CLASSES', 'D13,D197,D2,D24')
           .split(',')
@@ -27,21 +23,11 @@ class EnvConfig {
           .where((e) => e.isNotEmpty)
           .toList();
 
-  // ── Prediction Polling ──────────────────────────────────────────────────────
-
-  static int get predictionPollIntervalMs =>
-      int.tryParse(_get('PREDICTION_POLL_INTERVAL_MS', '2000')) ?? 2000;
-
-  static int get predictionPollMaxAttempts =>
-      int.tryParse(_get('PREDICTION_POLL_MAX_ATTEMPTS', '15')) ?? 15;
-
   // ── Debug ───────────────────────────────────────────────────────────────────
-
   static bool get enableLogging =>
       _get('ENABLE_LOGGING', 'false').toLowerCase() == 'true';
 
   // ── Helpers ─────────────────────────────────────────────────────────────────
-
   static String _require(String key) {
     final value = dotenv.env[key];
     if (value == null || value.isEmpty) {

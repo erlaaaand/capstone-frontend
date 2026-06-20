@@ -7,23 +7,19 @@ import 'package:mobile_app/core/router/route_names.dart';
 import 'package:mobile_app/core/theme/app_colors.dart';
 import 'package:mobile_app/injection_container.dart';
 
-// ── Feature: Auth ─────────────────────────────────────────────────────────────
 import 'package:mobile_app/features/auth/presentation/pages/splash_page.dart';
 import 'package:mobile_app/features/auth/presentation/pages/login_page.dart';
 import 'package:mobile_app/features/auth/presentation/pages/register_page.dart';
 
-// ── Feature: Prediction ───────────────────────────────────────────────────────
 import 'package:mobile_app/features/prediction/application/create_prediction/create_prediction_bloc.dart';
 import 'package:mobile_app/features/prediction/application/prediction_list/prediction_list_bloc.dart';
 import 'package:mobile_app/features/prediction/presentation/pages/scan_page.dart';
 import 'package:mobile_app/features/prediction/presentation/pages/prediction_history_page.dart';
 import 'package:mobile_app/features/prediction/presentation/pages/prediction_result_page.dart';
 
-// ── Feature: User ─────────────────────────────────────────────────────────────
 import 'package:mobile_app/features/user/application/profile_bloc.dart';
 import 'package:mobile_app/features/user/presentation/pages/profile_page.dart';
 
-// ── Feature: AI Health ────────────────────────────────────────────────────────
 import 'package:mobile_app/features/ai_health/application/ai_health_cubit.dart';
 
 class AppRouter {
@@ -36,14 +32,11 @@ class AppRouter {
     debugLogDiagnostics: true,
     redirect: (context, state) => _guard.redirect(state),
     routes: [
-      // ── Splash ─────────────────────────────────────────────────────────────
       GoRoute(
         path: RoutePaths.splash,
         name: RouteNames.splash,
         builder: (context, state) => const SplashPage(),
       ),
-
-      // ── Auth ────────────────────────────────────────────────────────────────
       GoRoute(
         path: RoutePaths.login,
         name: RouteNames.login,
@@ -55,9 +48,10 @@ class AppRouter {
         builder: (context, state) => const RegisterPage(),
       ),
 
-      // ── Main Shell ─────────────────────────────────────────────────────────
+      // ── Main Shell (Bottom Nav) ────────────────────────────────────────────
       ShellRoute(
         builder: (context, state, child) => BlocProvider<AiHealthCubit>(
+          lazy: false,
           create: (_) => sl<AiHealthCubit>()
             ..fetchCurrentStatus()
             ..startStatusStream(),
@@ -67,29 +61,31 @@ class AppRouter {
           ),
         ),
         routes: [
-          // ── Scan / Home ───────────────────────────────────────────────────
-          GoRoute(
-            path: RoutePaths.scan,
-            name: RouteNames.scan,
-            builder: (context, state) => BlocProvider<CreatePredictionBloc>(
+          ShellRoute(
+            builder: (context, state, child) =>
+                BlocProvider<CreatePredictionBloc>(
               create: (_) => sl<CreatePredictionBloc>(),
-              child: const ScanPage(),
+              child: child,
             ),
             routes: [
               GoRoute(
-                path: 'result/:predictionId',
-                name: RouteNames.predictionResult,
-                builder: (context, state) {
-                  final id = state.pathParameters['predictionId'] ?? '';
-                  return PredictionResultPage(
-                    predictionId: id,
-                  );
-                },
+                path: RoutePaths.scan,
+                name: RouteNames.scan,
+                builder: (context, state) => const ScanPage(),
+                routes: [
+                  GoRoute(
+                    path: 'result/:predictionId',
+                    name: RouteNames.predictionResult,
+                    builder: (context, state) {
+                      final id = state.pathParameters['predictionId'] ?? '';
+                      return PredictionResultPage(predictionId: id);
+                    },
+                  ),
+                ],
               ),
             ],
           ),
 
-          // ── History ───────────────────────────────────────────────────────
           GoRoute(
             path: RoutePaths.predictionHistory,
             name: RouteNames.predictionHistory,
@@ -99,7 +95,6 @@ class AppRouter {
             ),
           ),
 
-          // ── Profile ───────────────────────────────────────────────────────
           GoRoute(
             path: RoutePaths.profile,
             name: RouteNames.profile,
@@ -120,15 +115,11 @@ class AppRouter {
             const Icon(Icons.error_outline_rounded,
                 color: AppColors.error, size: 48),
             const SizedBox(height: 16),
-            Text(
-              'Halaman tidak ditemukan',
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
+            Text('Halaman tidak ditemukan',
+                style: Theme.of(context).textTheme.headlineSmall),
             const SizedBox(height: 8),
-            Text(
-              state.uri.toString(),
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
+            Text(state.uri.toString(),
+                style: Theme.of(context).textTheme.bodySmall),
             const SizedBox(height: 24),
             ElevatedButton(
               onPressed: () => context.goNamed(RouteNames.scan),
@@ -141,12 +132,8 @@ class AppRouter {
   );
 }
 
-// ── Shell Scaffold ─────────────────────────────────────────────────────────────
 class _ShellScaffold extends StatelessWidget {
-  const _ShellScaffold({
-    required this.location,
-    required this.child,
-  });
+  const _ShellScaffold({required this.location, required this.child});
 
   final String location;
   final Widget child;
@@ -154,7 +141,7 @@ class _ShellScaffold extends StatelessWidget {
   int get _selectedIndex {
     if (location.startsWith(RoutePaths.predictionHistory)) return 1;
     if (location.startsWith(RoutePaths.profile)) return 2;
-    return 0; // scan (default)
+    return 0;
   }
 
   @override

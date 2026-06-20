@@ -2,9 +2,11 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:mobile_app/core/constants/app_constants.dart';
 import 'package:mobile_app/core/theme/app_colors.dart';
 import 'package:mobile_app/core/theme/app_dimensions.dart';
 import 'package:mobile_app/core/theme/app_text_styles.dart';
+import 'package:mobile_app/core/error/exceptions.dart';
 import 'package:mobile_app/core/utils/file_utils.dart';
 import 'package:mobile_app/core/utils/image_hash_utils.dart';
 
@@ -27,92 +29,70 @@ class AppImagePickerSheet extends StatelessWidget {
       );
 
   @override
-  Widget build(BuildContext context) => Container(
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: const BorderRadius.vertical(
-            top: Radius.circular(AppDimensions.radiusXl),
+  Widget build(BuildContext context) {
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(AppDimensions.radiusXl),
+        ),
+      ),
+      padding: EdgeInsets.fromLTRB(
+        AppDimensions.lg,
+        AppDimensions.md,
+        AppDimensions.lg,
+        AppDimensions.xl + MediaQuery.viewPaddingOf(context).bottom,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: AppColors.divider,
+              borderRadius: BorderRadius.circular(AppDimensions.radiusFull),
+            ),
           ),
-        ),
-        padding: EdgeInsets.fromLTRB(
-          AppDimensions.lg,
-          AppDimensions.md,
-          AppDimensions.lg,
-          AppDimensions.xl + MediaQuery.viewPaddingOf(context).bottom,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Handle bar
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AppColors.divider,
-                borderRadius: BorderRadius.circular(AppDimensions.radiusFull),
-              ),
+          const SizedBox(height: AppDimensions.lg),
+          const Text('Ambil Foto Durian', style: AppTextStyles.headlineSmall),
+          const SizedBox(height: AppDimensions.xs),
+          const Text(
+            'Format: JPG, PNG, WebP · Maks. ${AppConstants.maxUploadSizeMb}MB',
+            style: AppTextStyles.bodySmall,
+          ),
+          const SizedBox(height: AppDimensions.lg),
+          const _PhotoTipBanner(),
+          const SizedBox(height: AppDimensions.lg),
+          
+          _SourceTile(
+            icon: Icons.camera_alt_rounded,
+            label: 'Buka Kamera',
+            subtitle: 'Langsung dari kamera perangkat',
+            iconBgColor: AppColors.primaryLight.withOpacity(0.15),
+            iconColor: AppColors.primaryDark,
+            onTap: () async {
+              final file = await _pickAndValidate(context, ImageSource.camera);
+              if (context.mounted) Navigator.pop(context, file);
+            },
+          ),
+          const SizedBox(height: AppDimensions.md),
+          
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            style: TextButton.styleFrom(
+              foregroundColor: AppColors.textSecondary,
+              minimumSize:
+                  const Size(double.infinity, AppDimensions.buttonHeightSm),
             ),
-            const SizedBox(height: AppDimensions.lg),
-            Text('Pilih Sumber Gambar', style: AppTextStyles.headlineSmall),
-            const SizedBox(height: AppDimensions.xs),
-            Text(
-              'Format: JPG, PNG, WebP · Maks. 5MB',
-              style: AppTextStyles.bodySmall,
-            ),
-            const SizedBox(height: AppDimensions.lg),
+            child: const Text('Batal'),
+          ),
+        ],
+      ),
+    );
+  }
 
-            // Tip kualitas foto
-            _PhotoTipBanner(),
-            const SizedBox(height: AppDimensions.lg),
-
-            // Kamera
-            _SourceTile(
-              icon: Icons.camera_alt_rounded,
-              label: 'Ambil Foto',
-              subtitle: 'Langsung dari kamera perangkat',
-              iconBgColor: AppColors.primaryLight.withOpacity(0.15),
-              iconColor: AppColors.primaryDark,
-              onTap: () async {
-                final file = await _pickAndValidate(
-                  context,
-                  ImageSource.camera,
-                );
-                if (context.mounted) Navigator.pop(context, file);
-              },
-            ),
-            const SizedBox(height: AppDimensions.sm),
-
-            // Galeri
-            _SourceTile(
-              icon: Icons.photo_library_outlined,
-              label: 'Pilih dari Galeri',
-              subtitle: 'Gambar tersimpan di perangkat',
-              iconBgColor: AppColors.secondaryLight.withOpacity(0.15),
-              iconColor: AppColors.secondaryDark,
-              onTap: () async {
-                final file = await _pickAndValidate(
-                  context,
-                  ImageSource.gallery,
-                );
-                if (context.mounted) Navigator.pop(context, file);
-              },
-            ),
-            SizedBox(height: AppDimensions.md),
-
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              style: TextButton.styleFrom(
-                foregroundColor: AppColors.textSecondary,
-                minimumSize:
-                    const Size(double.infinity, AppDimensions.buttonHeightSm),
-              ),
-              child: const Text('Batal'),
-            ),
-          ],
-        ),
-      );
-
-  /// Ambil gambar, validasi, dan periksa duplikasi.
   Future<File?> _pickAndValidate(
     BuildContext context,
     ImageSource source,
@@ -129,17 +109,13 @@ class AppImagePickerSheet extends StatelessWidget {
 
       final file = File(xFile.path);
 
-      // Validasi format & ukuran
       try {
         FileUtils.validateImage(file);
-      } catch (e) {
-        if (context.mounted) {
-          _showErrorSnackBar(context, e.toString().replaceAll('InvalidFileException: ', ''));
-        }
+      } on InvalidFileException catch (e) {
+        if (context.mounted) _showErrorSnackBar(context, e.message);
         return null;
       }
 
-      // Cek duplikasi dengan hash
       if (previousImageHash != null) {
         final isDup =
             await ImageHashUtils.matchesHash(file, previousImageHash!);
@@ -151,6 +127,9 @@ class AppImagePickerSheet extends StatelessWidget {
 
       return file;
     } catch (_) {
+      if (context.mounted) {
+        _showErrorSnackBar(context, 'Gagal memproses gambar. Coba lagi.');
+      }
       return null;
     }
   }
@@ -174,7 +153,7 @@ class AppImagePickerSheet extends StatelessWidget {
                 color: AppColors.textSecondary,
               ),
             ),
-            SizedBox(height: AppDimensions.md),
+            const SizedBox(height: AppDimensions.md),
             Container(
               padding: const EdgeInsets.all(AppDimensions.sm),
               decoration: BoxDecoration(
@@ -183,18 +162,14 @@ class AppImagePickerSheet extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  const Icon(
-                    Icons.info_outline_rounded,
-                    color: AppColors.warning,
-                    size: 16,
-                  ),
+                  const Icon(Icons.info_outline_rounded,
+                      color: AppColors.warning, size: 16),
                   const SizedBox(width: AppDimensions.xs),
                   Expanded(
                     child: Text(
                       'Gunakan gambar berbeda untuk menghemat penyimpanan.',
-                      style: AppTextStyles.bodySmall.copyWith(
-                        color: AppColors.warning,
-                      ),
+                      style: AppTextStyles.bodySmall
+                          .copyWith(color: AppColors.warning),
                     ),
                   ),
                 ],
@@ -205,7 +180,7 @@ class AppImagePickerSheet extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Pilih Gambar Lain'),
+            child: const Text('Ulangi Foto'),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
@@ -231,9 +206,9 @@ class AppImagePickerSheet extends StatelessWidget {
   }
 }
 
-// ── Photo Tip Banner ──────────────────────────────────────────────────────────
-
 class _PhotoTipBanner extends StatelessWidget {
+  const _PhotoTipBanner();
+
   @override
   Widget build(BuildContext context) => Container(
         padding: const EdgeInsets.all(AppDimensions.sm),
@@ -245,27 +220,20 @@ class _PhotoTipBanner extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Icon(
-              Icons.lightbulb_outline_rounded,
-              color: AppColors.info,
-              size: 16,
-            ),
+            const Icon(Icons.lightbulb_outline_rounded,
+                color: AppColors.info, size: 16),
             const SizedBox(width: AppDimensions.xs),
             Expanded(
               child: Text(
                 'Tips: Ambil foto dengan pencahayaan baik, durian terlihat jelas, '
                 'dan latar belakang tidak terlalu ramai.',
-                style: AppTextStyles.bodySmall.copyWith(
-                  color: AppColors.info,
-                ),
+                style: AppTextStyles.bodySmall.copyWith(color: AppColors.info),
               ),
             ),
           ],
         ),
       );
 }
-
-// ── Source Tile ───────────────────────────────────────────────────────────────
 
 class _SourceTile extends StatelessWidget {
   const _SourceTile({
@@ -291,7 +259,7 @@ class _SourceTile extends StatelessWidget {
           onTap: onTap,
           borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
           child: Container(
-            padding: EdgeInsets.all(AppDimensions.md),
+            padding: const EdgeInsets.all(AppDimensions.md),
             decoration: BoxDecoration(
               color: Theme.of(context)
                   .colorScheme
@@ -307,12 +275,11 @@ class _SourceTile extends StatelessWidget {
                   height: 48,
                   decoration: BoxDecoration(
                     color: iconBgColor,
-                    borderRadius:
-                        BorderRadius.circular(AppDimensions.radiusMd),
+                    borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
                   ),
                   child: Icon(icon, color: iconColor, size: AppDimensions.iconMd),
                 ),
-                SizedBox(width: AppDimensions.md),
+                const SizedBox(width: AppDimensions.md),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -321,7 +288,7 @@ class _SourceTile extends StatelessWidget {
                   ],
                 ),
                 const Spacer(),
-                Icon(Icons.chevron_right_rounded,
+                const Icon(Icons.chevron_right_rounded,
                     color: AppColors.textHint, size: AppDimensions.iconMd),
               ],
             ),

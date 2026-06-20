@@ -11,11 +11,7 @@ class ApiClient {
   final Dio _dio;
   String get baseUrl => EnvConfig.apiBaseUrl;
 
-  // ── Factory ──────────────────────────────────────────────────────────────
-
-  factory ApiClient.create({
-    required AuthInterceptor authInterceptor,
-  }) {
+  factory ApiClient.create({required AuthInterceptor authInterceptor}) {
     final options = BaseOptions(
       baseUrl: EnvConfig.apiBaseUrl,
       connectTimeout: AppConstants.connectTimeout,
@@ -37,20 +33,16 @@ class ApiClient {
     return ApiClient._(dio: dio);
   }
 
-  // ── HTTP Methods ─────────────────────────────────────────────────────────
-
   Future<Response<T>> get<T>(
     String path, {
     Map<String, dynamic>? queryParameters,
     Options? options,
     CancelToken? cancelToken,
   }) =>
-      _dio.get<T>(
-        path,
-        queryParameters: queryParameters,
-        options: options,
-        cancelToken: cancelToken,
-      );
+      _dio.get<T>(path,
+          queryParameters: queryParameters,
+          options: options,
+          cancelToken: cancelToken);
 
   Future<Response<T>> post<T>(
     String path, {
@@ -59,13 +51,11 @@ class ApiClient {
     Options? options,
     CancelToken? cancelToken,
   }) =>
-      _dio.post<T>(
-        path,
-        data: data,
-        queryParameters: queryParameters,
-        options: options,
-        cancelToken: cancelToken,
-      );
+      _dio.post<T>(path,
+          data: data,
+          queryParameters: queryParameters,
+          options: options,
+          cancelToken: cancelToken);
 
   Future<Response<T>> patch<T>(
     String path, {
@@ -73,38 +63,32 @@ class ApiClient {
     Options? options,
     CancelToken? cancelToken,
   }) =>
-      _dio.patch<T>(
-        path,
-        data: data,
-        options: options,
-        cancelToken: cancelToken,
-      );
+      _dio.patch<T>(path, data: data, options: options, cancelToken: cancelToken);
 
   Future<Response<T>> delete<T>(
     String path, {
     Options? options,
     CancelToken? cancelToken,
   }) =>
-      _dio.delete<T>(
-        path,
-        options: options,
-        cancelToken: cancelToken,
-      );
+      _dio.delete<T>(path, options: options, cancelToken: cancelToken);
 
   Future<Response<T>> postMultipart<T>(
     String path, {
     required FormData formData,
     void Function(int sent, int total)? onSendProgress,
+    Duration? receiveTimeout,
+    Duration? sendTimeout,
     Options? options,
     CancelToken? cancelToken,
   }) =>
       _dio.post<T>(
         path,
         data: formData,
-        options: options ??
-            Options(
-              contentType: 'multipart/form-data',
-            ),
+        options: (options ?? Options(contentType: 'multipart/form-data'))
+            .copyWith(
+          receiveTimeout: receiveTimeout,
+          sendTimeout: sendTimeout,
+        ),
         onSendProgress: onSendProgress,
         cancelToken: cancelToken,
       );
