@@ -61,7 +61,7 @@ abstract class AppTheme {
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.primary,
             foregroundColor: AppColors.white,
-            minimumSize: Size(
+            minimumSize: const Size(
               AppDimensions.buttonMinWidth,
               AppDimensions.buttonHeight,
             ),
@@ -77,7 +77,7 @@ abstract class AppTheme {
         outlinedButtonTheme: OutlinedButtonThemeData(
           style: OutlinedButton.styleFrom(
             foregroundColor: AppColors.primary,
-            minimumSize: Size(
+            minimumSize: const Size(
               AppDimensions.buttonMinWidth,
               AppDimensions.buttonHeight,
             ),
@@ -101,7 +101,7 @@ abstract class AppTheme {
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
           fillColor: AppColors.surfaceAlt,
-          contentPadding: EdgeInsets.symmetric(
+          contentPadding: const EdgeInsets.symmetric(
             horizontal: AppDimensions.md,
             vertical: AppDimensions.md,
           ),
@@ -178,7 +178,6 @@ abstract class AppTheme {
 
   // ── Dark ──────────────────────────────────────────────────────────────────
   static ThemeData get dark {
-    // 1. Definisikan ColorScheme untuk Dark Mode
     final darkColorScheme = ColorScheme.fromSeed(
       seedColor: AppColors.primary,
       brightness: Brightness.dark,
@@ -192,14 +191,12 @@ abstract class AppTheme {
       onError: AppColors.darkBackground,
     );
 
-    // 2. Override TextTheme dari light agar seluruh teks menjadi putih/terang
     final darkTextTheme = light.textTheme.apply(
       bodyColor: Colors.white,
       displayColor: Colors.white,
       decorationColor: Colors.white70,
     );
 
-    // 3. Gabungkan menjadi ThemeData gelap yang utuh
     return light.copyWith(
       brightness: Brightness.dark,
       scaffoldBackgroundColor: AppColors.darkBackground,

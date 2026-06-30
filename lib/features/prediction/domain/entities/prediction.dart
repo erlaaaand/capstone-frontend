@@ -2,6 +2,28 @@ import 'package:equatable/equatable.dart';
 import 'package:mobile_app/features/prediction/domain/value_objects/confidence_score.dart';
 import 'package:mobile_app/features/prediction/domain/value_objects/prediction_status.dart';
 
+class MarketPriceSummary extends Equatable {
+  const MarketPriceSummary({
+    required this.minPriceKg,
+    required this.maxPriceKg,
+    required this.avgPriceKg,
+    required this.totalListings,
+  });
+
+  final int minPriceKg;
+  final int maxPriceKg;
+  final int avgPriceKg;
+  final int totalListings;
+
+  @override
+  List<Object?> get props => [
+        minPriceKg,
+        maxPriceKg,
+        avgPriceKg,
+        totalListings,
+      ];
+}
+
 class Prediction extends Equatable {
   const Prediction({
     required this.id,
@@ -10,9 +32,14 @@ class Prediction extends Equatable {
     required this.fileKey,
     required this.status,
     this.predictedClass,
+    this.varietyName,
+    this.localName,
+    this.origin,
     this.confidence,
     this.allScores,
+    this.description,
     this.errorMessage,
+    this.marketPriceSummary,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -29,11 +56,21 @@ class Prediction extends Equatable {
 
   final String? predictedClass;
 
+  final String? varietyName;
+  
+  final String? localName;
+  
+  final String? origin;
+
   final ConfidenceScore? confidence;
 
   final Map<String, double>? allScores;
 
+  final String? description;
+
   final String? errorMessage;
+
+  final MarketPriceSummary? marketPriceSummary;
 
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -44,6 +81,10 @@ class Prediction extends Equatable {
   bool get isPending  => status.isPending;
   bool get isFailed   => status.isFailed;
   bool get isComplete => status.isComplete;
+
+  bool get hasHighConfidence => (confidence?.value ?? 0.0) > 0.8;
+  
+  bool get isStrictSuccess => isSuccess && hasHighConfidence;
 
   @override
   List<Object?> get props => [
@@ -56,6 +97,7 @@ class Prediction extends Equatable {
         confidence,
         allScores,
         errorMessage,
+        marketPriceSummary,
         createdAt,
         updatedAt,
       ];

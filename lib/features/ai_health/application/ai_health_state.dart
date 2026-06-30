@@ -1,7 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:mobile_app/core/error/failures.dart';
 import 'package:mobile_app/features/ai_health/domain/entities/ai_status.dart';
-import 'package:mobile_app/features/ai_health/presentation/widgets/ai_status_indicator.dart';
 
 sealed class AiHealthState extends Equatable {
   const AiHealthState();
@@ -25,14 +24,7 @@ final class AiHealthLoaded extends AiHealthState {
   });
 
   final AiStatus aiStatus;
-
   final bool isStreaming;
-
-  AiStatusValue get indicatorValue => switch (aiStatus.status) {
-        AiServiceStatus.online  => AiStatusValue.online,
-        AiServiceStatus.offline => AiStatusValue.offline,
-        AiServiceStatus.loading => AiStatusValue.checking,
-      };
 
   bool get showBanner => !aiStatus.canScan;
 
@@ -51,6 +43,9 @@ final class AiHealthFailure extends AiHealthState {
 
   final Failure failure;
 
+  String get displayMessage =>
+      failure.message.isNotEmpty ? failure.message : 'Terjadi kesalahan.';
+
   @override
   List<Object?> get props => [failure];
 }
@@ -62,8 +57,12 @@ final class AiHealthStreamError extends AiHealthState {
   });
 
   final Failure failure;
-
   final AiStatus? lastKnownStatus;
+
+  String get displayMessage =>
+      failure.message.isNotEmpty ? failure.message : 'Koneksi stream terputus.';
+
+  bool get isReconnecting => failure.message.contains('Mencoba menyambung');
 
   @override
   List<Object?> get props => [failure, lastKnownStatus];

@@ -78,7 +78,7 @@ class _EditNameSectionState extends State<EditNameSection> {
                   maxLength: 100,
                   validator: Validator.fullName,
                 ),
-                const SizedBox(height: AppDimensions.md),
+                SizedBox(height: AppDimensions.md),
                 AppButton(
                   label: 'Simpan Nama',
                   onPressed: isUpdating ? null : () => _submit(isUpdating),
@@ -173,7 +173,7 @@ class _EditPasswordSectionState extends State<EditPasswordSection> {
                     enabled: !isUpdating,
                     validator: Validator.loginPassword,
                   ),
-                  const SizedBox(height: AppDimensions.md),
+                  SizedBox(height: AppDimensions.md),
 
                   // Password baru
                   AppPasswordField(
@@ -185,7 +185,7 @@ class _EditPasswordSectionState extends State<EditPasswordSection> {
                     enabled: !isUpdating,
                     validator: Validator.password,
                   ),
-                  const SizedBox(height: AppDimensions.md),
+                  SizedBox(height: AppDimensions.md),
 
                   // Konfirmasi password baru
                   AppPasswordField(
@@ -197,7 +197,7 @@ class _EditPasswordSectionState extends State<EditPasswordSection> {
                     validator: (v) =>
                         Validator.confirmPassword(v, _newPassCtrl.text),
                   ),
-                  const SizedBox(height: AppDimensions.md),
+                  SizedBox(height: AppDimensions.md),
 
                   AppButton(
                     label: 'Ubah Password',
@@ -232,7 +232,7 @@ class _SectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.all(AppDimensions.md),
+        padding: EdgeInsets.all(AppDimensions.md),
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
@@ -266,9 +266,9 @@ class _SectionCard extends StatelessWidget {
                 Text(title, style: AppTextStyles.titleLarge),
               ],
             ),
-            const SizedBox(height: AppDimensions.md),
+            SizedBox(height: AppDimensions.md),
             const Divider(height: 1),
-            const SizedBox(height: AppDimensions.md),
+            SizedBox(height: AppDimensions.md),
             child,
           ],
         ),

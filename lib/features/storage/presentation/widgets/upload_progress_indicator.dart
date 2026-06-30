@@ -3,7 +3,6 @@ import 'package:mobile_app/core/theme/app_dimensions.dart';
 import 'package:mobile_app/core/theme/app_text_styles.dart';
 import 'package:flutter/material.dart';
 
-/// Progress bar upload gambar dengan persentase dan label status.
 class UploadProgressIndicator extends StatelessWidget {
   const UploadProgressIndicator({
     super.key,
@@ -11,7 +10,6 @@ class UploadProgressIndicator extends StatelessWidget {
     this.label,
   });
 
-  /// Nilai 0.0 – 1.0. Jika null, tampilkan indeterminate.
   final double? progress;
   final String? label;
 

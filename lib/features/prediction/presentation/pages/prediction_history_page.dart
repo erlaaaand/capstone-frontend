@@ -1,7 +1,7 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:mobile_app/core/constants/app_constants.dart';
 import 'package:mobile_app/core/router/route_names.dart';
 import 'package:mobile_app/core/theme/app_colors.dart';
 import 'package:mobile_app/core/theme/app_dimensions.dart';
@@ -13,19 +13,10 @@ import 'package:mobile_app/features/prediction/application/prediction_list/predi
 import 'package:mobile_app/features/prediction/application/prediction_list/prediction_list_event.dart';
 import 'package:mobile_app/features/prediction/application/prediction_list/prediction_list_state.dart';
 import 'package:mobile_app/features/prediction/domain/entities/prediction.dart';
-// import 'package:mobile_app/features/prediction/domain/value_objects/prediction_status.dart';
 import 'package:mobile_app/features/prediction/presentation/widgets/prediction_card.dart';
 
-/// Filter status untuk riwayat prediksi.
 enum _HistoryFilter { all, success, failed, pending }
 
-/// Halaman riwayat prediksi — versi upgrade.
-///
-/// Peningkatan:
-/// - Stats card: total scan, berhasil, gagal
-/// - Filter chip per status
-/// - Empty state per filter
-/// - Konfirmasi hapus sebelum dismiss
 class PredictionHistoryPage extends StatefulWidget {
   const PredictionHistoryPage({super.key});
 
@@ -36,6 +27,7 @@ class PredictionHistoryPage extends StatefulWidget {
 class _PredictionHistoryPageState extends State<PredictionHistoryPage> {
   final _scrollController = ScrollController();
   _HistoryFilter _activeFilter = _HistoryFilter.all;
+  Completer<void>? _refreshCompleter;
 
   @override
   void initState() {
@@ -53,26 +45,23 @@ class _PredictionHistoryPageState extends State<PredictionHistoryPage> {
   }
 
   void _onScroll() {
+    final state = context.read<PredictionListBloc>().state;
+    // 👇 Cegah pemanggilan API ganda jika sedang memuat halaman berikutnya
+    if (state is PredictionListPopulated && state.isLoadingMore) return;
+
     final maxScroll = _scrollController.position.maxScrollExtent;
     final currentScroll = _scrollController.position.pixels;
+    
+    // 👇 Panggil halaman selanjutnya jika tersisa 20% ruang scroll
     if (currentScroll >= maxScroll * 0.8) {
-      context
-          .read<PredictionListBloc>()
-          .add(const PredictionListNextPageFetched());
+      context.read<PredictionListBloc>().add(const PredictionListNextPageFetched());
     }
   }
 
-  Future<void> _onRefresh() async {
+  Future<void> _onRefresh() {
+    _refreshCompleter = Completer<void>();
     context.read<PredictionListBloc>().add(const PredictionListRefreshed());
-    await _waitForLoad();
-  }
-
-  Future<void> _waitForLoad() async {
-    await Future.doWhile(() async {
-      await Future.delayed(const Duration(milliseconds: 100));
-      if (!mounted) return false;
-      return context.read<PredictionListBloc>().state is PredictionListLoading;
-    });
+    return _refreshCompleter!.future;
   }
 
   Future<void> _onDeleteItem(String predictionId) async {
@@ -120,12 +109,24 @@ class _PredictionHistoryPageState extends State<PredictionHistoryPage> {
     return switch (_activeFilter) {
       _HistoryFilter.all => items,
       _HistoryFilter.success =>
-        items.where((p) => p.status.isSuccess).toList(),
+        items.where((p) => p.isStrictSuccess).toList(),
       _HistoryFilter.failed =>
-        items.where((p) => p.status.isFailed).toList(),
+        items.where((p) => p.isFailed || (p.isSuccess && !p.hasHighConfidence)).toList(),
       _HistoryFilter.pending =>
-        items.where((p) => p.status.isPending).toList(),
+        items.where((p) => p.isPending).toList(),
     };
+  }
+
+  void _listener(BuildContext context, PredictionListState state) {
+    // 👇 Selesaikan (tutup) loading indikator pada refresh pull-to-refresh
+    if (state is! PredictionListLoading) {
+      _refreshCompleter?.complete();
+      _refreshCompleter = null;
+    }
+
+    if (state is PredictionListFailure && state.hasPreviousData) {
+      AppSnackBar.showError(context, state.failure.message);
+    }
   }
 
   @override
@@ -142,9 +143,7 @@ class _PredictionHistoryPageState extends State<PredictionHistoryPage> {
             actions: [
               IconButton(
                 icon: const Icon(Icons.refresh_rounded),
-                onPressed: () => context
-                    .read<PredictionListBloc>()
-                    .add(const PredictionListRefreshed()),
+                onPressed: _onRefresh,
                 tooltip: 'Refresh',
               ),
             ],
@@ -159,12 +158,6 @@ class _PredictionHistoryPageState extends State<PredictionHistoryPage> {
           ),
         ),
       );
-
-  void _listener(BuildContext context, PredictionListState state) {
-    if (state is PredictionListFailure && state.hasPreviousData) {
-      AppSnackBar.showError(context, state.failure.message);
-    }
-  }
 
   Widget _buildBody(BuildContext context, PredictionListState state) =>
       switch (state) {
@@ -200,18 +193,13 @@ class _PredictionHistoryPageState extends State<PredictionHistoryPage> {
 
     return Column(
       children: [
-        // Stats card
-        if (allItems.isNotEmpty)
-          _StatsRow(items: allItems),
-
-        // Filter chips
+        if (allItems.isNotEmpty) _StatsRow(items: allItems),
         if (allItems.isNotEmpty)
           _FilterChipRow(
             activeFilter: _activeFilter,
             items: allItems,
             onFilterChanged: (f) => setState(() => _activeFilter = f),
           ),
-
         Expanded(
           child: filtered.isEmpty
               ? _FilterEmptyView(filter: _activeFilter)
@@ -220,7 +208,7 @@ class _PredictionHistoryPageState extends State<PredictionHistoryPage> {
                   color: AppColors.primary,
                   child: ListView.separated(
                     controller: _scrollController,
-                    padding: EdgeInsets.fromLTRB(
+                    padding: const EdgeInsets.fromLTRB(
                       AppDimensions.pagePaddingH,
                       AppDimensions.md,
                       AppDimensions.pagePaddingH,
@@ -231,10 +219,10 @@ class _PredictionHistoryPageState extends State<PredictionHistoryPage> {
                         const SizedBox(height: AppDimensions.sm),
                     itemBuilder: (context, index) {
                       if (index == filtered.length) {
-                        return Padding(
+                        return const Padding(
                           padding: EdgeInsets.symmetric(
                               vertical: AppDimensions.md),
-                          child: const Center(
+                          child: Center(
                             child: CircularProgressIndicator(
                               color: AppColors.primary,
                               strokeWidth: 2.5,
@@ -245,22 +233,11 @@ class _PredictionHistoryPageState extends State<PredictionHistoryPage> {
 
                       final prediction = filtered[index];
                       return PredictionCard(
-                        id: prediction.id,
-                        imageUrl: prediction.imageUrl,
-                        status: prediction.status.value,
-                        createdAt: prediction.createdAt.toIso8601String(),
-                        varietyName: prediction.predictedClass != null
-                            ? (AppConstants.durianVarietyNames[
-                                    prediction.predictedClass] ??
-                                prediction.predictedClass)
-                            : null,
-                        confidenceScore: prediction.confidence?.value,
+                        prediction: prediction,
                         onTap: () => context.goNamed(
                           RouteNames.predictionResult,
                           pathParameters: {'predictionId': prediction.id},
-                          extra: prediction,
                         ),
-                        onDelete: () => _onDeleteItem(prediction.id),
                       );
                     },
                   ),
@@ -282,10 +259,10 @@ class _StatsRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final total = items.length;
     final success = items.where((p) => p.status.isSuccess).length;
-    final failed = items.where((p) => p.status.isFailed).length;
+    final failed = items.where((p) => p.isFailed || (p.isSuccess && !p.hasHighConfidence)).length;
 
     return Padding(
-      padding: EdgeInsets.fromLTRB(
+      padding: const EdgeInsets.fromLTRB(
         AppDimensions.pagePaddingH,
         AppDimensions.md,
         AppDimensions.pagePaddingH,
@@ -378,11 +355,11 @@ class _FilterChipRow extends StatelessWidget {
   int _count(_HistoryFilter f) => switch (f) {
         _HistoryFilter.all => items.length,
         _HistoryFilter.success =>
-          items.where((p) => p.status.isSuccess).length,
+          items.where((p) => p.isStrictSuccess).length,
         _HistoryFilter.failed =>
-          items.where((p) => p.status.isFailed).length,
+          items.where((p) => p.isFailed || (p.isSuccess && !p.hasHighConfidence)).length,
         _HistoryFilter.pending =>
-          items.where((p) => p.status.isPending).length,
+          items.where((p) => p.isPending).length,
       };
 
   @override
@@ -445,7 +422,7 @@ class _FilterChip extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: EdgeInsets.symmetric(
+        padding: const EdgeInsets.symmetric(
           horizontal: AppDimensions.md,
           vertical: AppDimensions.xs,
         ),

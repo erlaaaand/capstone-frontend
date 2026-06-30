@@ -46,7 +46,7 @@ abstract class AppColors {
   static const aiOffline = Color(0xFFB71C1C);
 
   // ── Confidence Score Gradient ─────────────────────────────────────────────
-  /// Gradient warna gauge confidence
+  /// Gradient color gauge confidence
   static const confidenceLow    = Color(0xFFE53935);  // < 0.5
   static const confidenceMedium = Color(0xFFFFB300);  // 0.5 – 0.8
   static const confidenceHigh   = Color(0xFF43A047);  // > 0.8

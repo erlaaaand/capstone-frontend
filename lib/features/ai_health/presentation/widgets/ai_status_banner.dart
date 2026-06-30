@@ -3,13 +3,6 @@ import 'package:mobile_app/core/theme/app_colors.dart';
 import 'package:mobile_app/core/theme/app_dimensions.dart';
 import 'package:mobile_app/core/theme/app_text_styles.dart';
 
-/// Banner status AI yang ditampilkan di atas halaman Scan ketika
-/// AI service tidak tersedia.
-///
-/// Upgrade v2:
-/// - Animasi masuk/keluar dengan AnimatedSize
-/// - Ikon yang lebih kontekstual
-/// - Tombol retry dengan feedback loading
 class AiStatusBanner extends StatelessWidget {
   const AiStatusBanner({
     super.key,
@@ -23,7 +16,6 @@ class AiStatusBanner extends StatelessWidget {
   final String? message;
   final VoidCallback? onRetry;
 
-  /// Tampilkan spinner pada tombol retry saat sedang mencoba ulang.
   final bool isRetrying;
 
   @override
@@ -37,19 +29,18 @@ class AiStatusBanner extends StatelessWidget {
           color: Colors.transparent,
           child: Container(
             width: double.infinity,
-            padding: EdgeInsets.symmetric(
+            padding: const EdgeInsets.symmetric(
               horizontal: AppDimensions.md,
               vertical: AppDimensions.sm,
             ),
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               color: AppColors.errorLight,
-              border: const Border(
+              border: Border(
                 bottom: BorderSide(color: AppColors.error, width: 0.5),
               ),
             ),
             child: Row(
               children: [
-                // Ikon berkedip saat offline
                 _PulsingIcon(),
                 const SizedBox(width: AppDimensions.sm),
                 Expanded(

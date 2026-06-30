@@ -6,6 +6,7 @@ import 'package:mobile_app/core/usecases/usecase.dart';
 import 'package:mobile_app/features/ai_health/application/ai_health_state.dart';
 import 'package:mobile_app/features/ai_health/domain/use_cases/get_current_ai_status_use_case.dart';
 import 'package:mobile_app/features/ai_health/domain/use_cases/stream_ai_status_use_case.dart';
+import 'package:mobile_app/features/ai_health/domain/entities/ai_status.dart';
 
 class AiHealthCubit extends Cubit<AiHealthState> {
   AiHealthCubit({
@@ -41,16 +42,17 @@ class AiHealthCubit extends Cubit<AiHealthState> {
       (failure) => emit(AiHealthFailure(failure: failure)),
       (status) => emit(AiHealthLoaded(
         aiStatus: status,
-        isStreaming: wasStreaming,
+        isStreaming: wasStreaming || _sseSubscription != null,
       )),
     );
   }
 
   // ── SSE (Stream) ──────────────────────────────────────────────────────────
-  
+
   void startStatusStream() {
     if (_sseSubscription != null) return;
     _reconnectTimer?.cancel();
+    _reconnectTimer = null;
 
     _sseSubscription = _streamAiStatusUseCase(const NoParams()).listen(
       (either) {
@@ -61,7 +63,7 @@ class AiHealthCubit extends Cubit<AiHealthState> {
             _handleStreamDisconnection(failure);
           },
           (status) {
-            _reconnectAttempts = 0; // Reset percobaan jika berhasil konek
+            _reconnectAttempts = 0;
             if (!isClosed) {
               emit(AiHealthLoaded(aiStatus: status, isStreaming: true));
             }
@@ -81,10 +83,11 @@ class AiHealthCubit extends Cubit<AiHealthState> {
   }
 
   void stopStatusStream() {
-    _cancelSseSubscription();
     _reconnectTimer?.cancel();
+    _reconnectTimer = null;
+    _cancelSseSubscription();
     _reconnectAttempts = 0;
-    
+
     if (state is AiHealthLoaded) {
       emit((state as AiHealthLoaded).copyWith(isStreaming: false));
     }
@@ -101,9 +104,11 @@ class AiHealthCubit extends Cubit<AiHealthState> {
     final lastStatus = _lastKnownStatus;
     _cancelSseSubscription();
 
+    if (isClosed) return;
+
     if (_reconnectAttempts < _maxReconnectAttempts) {
       _reconnectAttempts++;
-      final delaySeconds = 2 * _reconnectAttempts; 
+      final delaySeconds = 2 * _reconnectAttempts;
 
       emit(AiHealthStreamError(
         failure: _ReconnectingFailure(delaySeconds),
@@ -112,6 +117,7 @@ class AiHealthCubit extends Cubit<AiHealthState> {
 
       _reconnectTimer?.cancel();
       _reconnectTimer = Timer(Duration(seconds: delaySeconds), () {
+        _reconnectTimer = null;
         if (!isClosed) startStatusStream();
       });
     } else {
@@ -126,8 +132,9 @@ class AiHealthCubit extends Cubit<AiHealthState> {
 
   @override
   Future<void> close() {
-    _cancelSseSubscription();
     _reconnectTimer?.cancel();
+    _reconnectTimer = null;
+    _cancelSseSubscription();
     return super.close();
   }
 
@@ -138,7 +145,7 @@ class AiHealthCubit extends Cubit<AiHealthState> {
     _sseSubscription = null;
   }
 
-  dynamic get _lastKnownStatus => switch (state) {
+  AiStatus? get _lastKnownStatus => switch (state) {
         AiHealthLoaded s      => s.aiStatus,
         AiHealthStreamError s => s.lastKnownStatus,
         _                     => null,

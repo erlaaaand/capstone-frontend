@@ -1,4 +1,5 @@
 // features/prediction/application/create_prediction/create_prediction_bloc.dart
+import 'package:dio/dio.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile_app/core/error/failures.dart';
 import 'package:mobile_app/core/utils/image_hash_utils.dart';
@@ -13,10 +14,13 @@ class CreatePredictionBloc
   })  : _createPredictionUseCase = createPredictionUseCase,
         super(const CreatePredictionInitial()) {
     on<CreatePredictionStarted>(_onStarted);
+    on<CreatePredictionCanceled>(_onCanceled);
     on<CreatePredictionReset>(_onReset);
   }
 
   final CreatePredictionUseCase _createPredictionUseCase;
+
+  CancelToken? _cancelToken;
 
   // ── Event Handlers ─────────────────────────────────────────────────────────
 
@@ -24,11 +28,13 @@ class CreatePredictionBloc
     CreatePredictionStarted event,
     Emitter<CreatePredictionState> emit,
   ) async {
+    _cancelToken = CancelToken();
     emit(const CreatePredictionUploading());
 
     final result = await _createPredictionUseCase(
       CreatePredictionParams(
         imageFile: event.imageFile,
+        cancelToken: _cancelToken,
         onUploadProgress: (sent, total) {
           if (!isClosed && total > 0) {
             if (sent >= total) {
@@ -41,7 +47,15 @@ class CreatePredictionBloc
       ),
     );
 
+    final wasCanceled = _cancelToken?.isCancelled ?? false;
+    _cancelToken = null;
+
     if (isClosed) return;
+
+    if (wasCanceled) {
+      emit(const CreatePredictionInitial());
+      return;
+    }
 
     result.fold(
       (failure) => emit(CreatePredictionFailure(failure)),
@@ -54,7 +68,7 @@ class CreatePredictionBloc
         } else {
           emit(CreatePredictionFailure(
             PredictionFailedFailure(
-              message: _getFriendlyErrorMessage(prediction.errorMessage),
+              message: prediction.errorMessage ?? 'AI gagal memproses gambar.',
             ),
           ));
         }
@@ -62,36 +76,25 @@ class CreatePredictionBloc
     );
   }
 
+  void _onCanceled(
+    CreatePredictionCanceled event,
+    Emitter<CreatePredictionState> emit,
+  ) {
+    _cancelToken?.cancel('Dibatalkan oleh pengguna.');
+  }
+
   void _onReset(
     CreatePredictionReset event,
     Emitter<CreatePredictionState> emit,
   ) {
+    _cancelToken?.cancel('Direset oleh pengguna.');
+    _cancelToken = null;
     emit(const CreatePredictionInitial());
   }
 
-  // ── Helper ─────────────────────────────────────────────────────────────────
-
-  String _getFriendlyErrorMessage(String? rawMessage) {
-    if (rawMessage == null) return 'AI gagal memproses gambar.';
-
-    final lowerCaseMessage = rawMessage.toLowerCase();
-
-    if (lowerCaseMessage.contains('bukan gambar buah durian') ||
-        lowerCaseMessage.contains('ditolak')) {
-      return 'Maaf, gambar ini tidak terdeteksi sebagai durian. '
-          'Coba foto dengan sudut yang lebih jelas.';
-    }
-
-    if (lowerCaseMessage.contains('timeout') ||
-        lowerCaseMessage.contains('timed out')) {
-      return 'AI tidak merespons tepat waktu. Coba lagi dalam beberapa saat.';
-    }
-
-    if (lowerCaseMessage.contains('network') ||
-        lowerCaseMessage.contains('connection')) {
-      return 'Koneksi terputus saat memproses. Periksa jaringan dan coba lagi.';
-    }
-
-    return rawMessage;
+  @override
+  Future<void> close() {
+    _cancelToken?.cancel('Bloc ditutup.');
+    return super.close();
   }
 }

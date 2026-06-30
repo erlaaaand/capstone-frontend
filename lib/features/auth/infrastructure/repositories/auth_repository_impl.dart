@@ -25,6 +25,9 @@ class AuthRepositoryImpl implements AuthRepository {
   final AuthLocalDataSource _local;
   final NetworkInfo _network;
 
+  AuthUser? _cachedUser; 
+  DateTime? _lastFetchTime;
+
   @override
   Future<Either<Failure, AuthToken>> register({
     required String email,
@@ -43,6 +46,9 @@ class AuthRepositoryImpl implements AuthRepository {
         userId: model.user.id,
         email: model.user.email,
       );
+
+      _cachedUser = null;
+      _lastFetchTime = null;
 
       return Right(model.toEntity());
     } on ServerException catch (e) {
@@ -72,6 +78,9 @@ class AuthRepositoryImpl implements AuthRepository {
         email: model.user.email,
       );
 
+      _cachedUser = model.user.toEntity();
+      _lastFetchTime = DateTime.now();
+
       return Right(model.toEntity());
     } on ServerException catch (e) {
       return Left(ErrorHandler.fromServerException(e));
@@ -84,11 +93,23 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<Either<Failure, AuthUser>> getMe() async {
+    if (_cachedUser != null && _lastFetchTime != null) {
+      final difference = DateTime.now().difference(_lastFetchTime!);
+      if (difference.inMinutes < 15) {
+        return Right(_cachedUser!); 
+      }
+    }
+
     if (!await _network.isConnected) return const Left(NoInternetFailure());
 
     try {
       final model = await _remote.getMe();
-      return Right(model.toEntity());
+      final userEntity = model.toEntity();
+
+      _cachedUser = userEntity;
+      _lastFetchTime = DateTime.now();
+
+      return Right(userEntity);
     } on ServerException catch (e) {
       return Left(ErrorHandler.fromServerException(e));
     } on DioException catch (e) {
@@ -101,6 +122,9 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<Either<Failure, Unit>> logout() async {
     try {
+      _cachedUser = null;
+      _lastFetchTime = null;
+
       await _local.clearSession();
       return const Right(unit);
     } catch (e) {

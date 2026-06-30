@@ -79,7 +79,7 @@ class ProfileHeader extends StatelessWidget {
         children: [
           // ── Avatar ──────────────────────────────────────────────────
           _AvatarCircle(initials: _initials, isActive: isActive),
-          const SizedBox(height: AppDimensions.md),
+          SizedBox(height: AppDimensions.md),
 
           // ── Nama ────────────────────────────────────────────────────
           Text(

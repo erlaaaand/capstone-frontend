@@ -1,3 +1,4 @@
+// prediction/infrastructure/models/paginated_prediction_response_model.dart
 import 'package:mobile_app/features/prediction/infrastructure/models/prediction_response_model.dart';
 
 class PaginatedPredictionResponseModel {
@@ -6,9 +7,7 @@ class PaginatedPredictionResponseModel {
     required this.meta,
   });
 
-  factory PaginatedPredictionResponseModel.fromJson(
-    Map<String, dynamic> json,
-  ) {
+  factory PaginatedPredictionResponseModel.fromJson(Map<String, dynamic> json) {
     final rawData = json['data'] as List?;
     final dataList = rawData?.map(
           (item) => PredictionResponseModel.fromJson(
@@ -17,10 +16,15 @@ class PaginatedPredictionResponseModel {
         ).toList() ?? [];
 
     PaginationMetaModel metaData;
-    if (json['meta'] != null && json['meta'] is Map) {
-      metaData = PaginationMetaModel.fromJson(
-        json['meta'] as Map<String, dynamic>,
+    if (json['totalPages'] != null) {
+      metaData = PaginationMetaModel(
+        page: json['page'] as int? ?? 1,
+        limit: json['limit'] as int? ?? 10,
+        total: json['total'] as int? ?? 0,
+        totalPages: json['totalPages'] as int? ?? 1,
       );
+    } else if (json['meta'] != null && json['meta'] is Map) {
+      metaData = PaginationMetaModel.fromJson(json['meta'] as Map<String, dynamic>);
     } else {
       metaData = PaginationMetaModel(
         page: 1,

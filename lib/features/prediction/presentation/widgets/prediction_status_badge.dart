@@ -1,36 +1,23 @@
+import 'package:flutter/material.dart';
 import 'package:mobile_app/core/theme/app_colors.dart';
 import 'package:mobile_app/core/theme/app_dimensions.dart';
-import 'package:mobile_app/core/theme/app_text_styles.dart';
-import 'package:flutter/material.dart';
-
-enum PredictionStatusDisplay { pending, success, failed }
+import 'package:mobile_app/features/prediction/domain/entities/prediction.dart';
 
 class PredictionStatusBadge extends StatefulWidget {
   const PredictionStatusBadge({
     super.key,
-    required this.status,
+    this.prediction,
+    this.rawStatus,
     this.compact = false,
   });
 
-  factory PredictionStatusBadge.fromString(
-    String raw, {
-    bool compact = false,
-  }) =>
-      PredictionStatusBadge(
-        status: _fromString(raw),
-        compact: compact,
-      );
+  factory PredictionStatusBadge.fromString(String raw, {bool compact = false}) {
+    return PredictionStatusBadge(rawStatus: raw, compact: compact);
+  }
 
-  final PredictionStatusDisplay status;
-
+  final Prediction? prediction;
+  final String? rawStatus;
   final bool compact;
-
-  static PredictionStatusDisplay _fromString(String raw) =>
-      switch (raw.toUpperCase()) {
-        'SUCCESS' => PredictionStatusDisplay.success,
-        'FAILED'  => PredictionStatusDisplay.failed,
-        _         => PredictionStatusDisplay.pending,
-      };
 
   @override
   State<PredictionStatusBadge> createState() => _PredictionStatusBadgeState();
@@ -40,26 +27,25 @@ class _PredictionStatusBadgeState extends State<PredictionStatusBadge>
     with SingleTickerProviderStateMixin {
   late AnimationController _spin;
 
+  bool get _isPending {
+    if (widget.prediction != null) return widget.prediction!.isPending;
+    if (widget.rawStatus != null) return widget.rawStatus!.toUpperCase() == 'PENDING';
+    return true;
+  }
+
   @override
   void initState() {
     super.initState();
     _spin = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1200),
-    );
-    if (widget.status == PredictionStatusDisplay.pending) {
-      _spin.repeat();
-    }
+        vsync: this, duration: const Duration(milliseconds: 1200));
+    if (_isPending) _spin.repeat();
   }
 
   @override
   void didUpdateWidget(PredictionStatusBadge old) {
     super.didUpdateWidget(old);
-    if (widget.status == PredictionStatusDisplay.pending) {
-      _spin.repeat();
-    } else {
-      _spin.stop();
-    }
+    if (_isPending) _spin.repeat();
+    else _spin.stop();
   }
 
   @override
@@ -68,59 +54,55 @@ class _PredictionStatusBadgeState extends State<PredictionStatusBadge>
     super.dispose();
   }
 
-  _BadgeConfig get _config => switch (widget.status) {
-        PredictionStatusDisplay.pending => const _BadgeConfig(
-            icon: Icons.hourglass_top_rounded,
-            label: 'Diproses',
-            bg: AppColors.warningLight,
-            fg: AppColors.warning,
-          ),
-        PredictionStatusDisplay.success => const _BadgeConfig(
-            icon: Icons.check_circle_outline_rounded,
-            label: 'Berhasil',
-            bg: AppColors.successLight,
-            fg: AppColors.success,
-          ),
-        PredictionStatusDisplay.failed => const _BadgeConfig(
-            icon: Icons.cancel_outlined,
-            label: 'Gagal',
-            bg: AppColors.errorLight,
-            fg: AppColors.error,
-          ),
-      };
-
   @override
   Widget build(BuildContext context) {
-    final cfg = _config;
-    final isPending = widget.status == PredictionStatusDisplay.pending;
+    Color bgColor;
+    Color fgColor;
+    String label;
+    IconData icon;
 
-    final iconWidget = isPending
-        ? RotationTransition(
-            turns: _spin,
-            child: Icon(cfg.icon, size: 14, color: cfg.fg),
-          )
-        : Icon(cfg.icon, size: 14, color: cfg.fg);
+    if (widget.prediction != null) {
+      final p = widget.prediction!;
+      if (p.isStrictSuccess) {
+        bgColor = AppColors.successLight; fgColor = AppColors.success; label = 'Berhasil'; icon = Icons.check_circle_outline_rounded;
+      } else if (p.isSuccess && !p.hasHighConfidence) {
+        bgColor = AppColors.warningLight; fgColor = AppColors.warning; label = 'Meragukan'; icon = Icons.help_outline_rounded;
+      } else if (p.isFailed) {
+        bgColor = AppColors.errorLight; fgColor = AppColors.error; label = 'Gagal'; icon = Icons.cancel_outlined;
+      } else {
+        bgColor = AppColors.warningLight; fgColor = AppColors.warning; label = 'Diproses'; icon = Icons.hourglass_top_rounded;
+      }
+    } 
+    else {
+      final raw = widget.rawStatus?.toUpperCase() ?? 'PENDING';
+      if (raw == 'SUCCESS') {
+        bgColor = AppColors.successLight; fgColor = AppColors.success; label = 'Berhasil'; icon = Icons.check_circle_outline_rounded;
+      } else if (raw == 'FAILED') {
+        bgColor = AppColors.errorLight; fgColor = AppColors.error; label = 'Gagal'; icon = Icons.cancel_outlined;
+      } else {
+        bgColor = AppColors.warningLight; fgColor = AppColors.warning; label = 'Diproses'; icon = Icons.hourglass_top_rounded;
+      }
+    }
+
+    // Adaptasi Dark Mode
+    if (Theme.of(context).brightness == Brightness.dark) {
+      bgColor = fgColor.withOpacity(0.2);
+    }
+
+    final iconWidget = _isPending
+        ? RotationTransition(turns: _spin, child: Icon(icon, size: 14, color: fgColor))
+        : Icon(icon, size: 14, color: fgColor);
 
     if (widget.compact) {
-      return Container(
-        width: 10,
-        height: 10,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: cfg.fg,
-        ),
-      );
+      return Container(width: 10, height: 10, decoration: BoxDecoration(shape: BoxShape.circle, color: fgColor));
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppDimensions.sm,
-        vertical: 3,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: AppDimensions.sm, vertical: 3),
       decoration: BoxDecoration(
-        color: cfg.bg,
+        color: bgColor,
         borderRadius: BorderRadius.circular(AppDimensions.radiusFull),
-        border: Border.all(color: cfg.fg.withOpacity(0.25)),
+        border: Border.all(color: fgColor.withOpacity(0.25)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -128,28 +110,14 @@ class _PredictionStatusBadgeState extends State<PredictionStatusBadge>
           iconWidget,
           const SizedBox(width: 4),
           Text(
-            cfg.label,
-            style: AppTextStyles.labelSmall.copyWith(
-              color: cfg.fg,
-              fontWeight: FontWeight.w700,
-            ),
+            label,
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: fgColor,
+                  fontWeight: FontWeight.w700,
+                ),
           ),
         ],
       ),
     );
   }
-}
-
-class _BadgeConfig {
-  const _BadgeConfig({
-    required this.icon,
-    required this.label,
-    required this.bg,
-    required this.fg,
-  });
-
-  final IconData icon;
-  final String label;
-  final Color bg;
-  final Color fg;
 }

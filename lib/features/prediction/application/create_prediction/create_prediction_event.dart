@@ -15,6 +15,13 @@ final class CreatePredictionStarted extends CreatePredictionEvent {
   List<Object?> get props => [imageFile.path];
 }
 
+final class CreatePredictionCanceled extends CreatePredictionEvent {
+  const CreatePredictionCanceled();
+
+  @override
+  List<Object?> get props => [];
+}
+
 final class CreatePredictionReset extends CreatePredictionEvent {
   const CreatePredictionReset();
 

@@ -16,6 +16,7 @@ import 'package:mobile_app/features/prediction/application/prediction_list/predi
 import 'package:mobile_app/features/prediction/presentation/pages/scan_page.dart';
 import 'package:mobile_app/features/prediction/presentation/pages/prediction_history_page.dart';
 import 'package:mobile_app/features/prediction/presentation/pages/prediction_result_page.dart';
+import 'package:mobile_app/features/prediction/domain/entities/prediction.dart';
 
 import 'package:mobile_app/features/user/application/profile_bloc.dart';
 import 'package:mobile_app/features/user/presentation/pages/profile_page.dart';
@@ -78,7 +79,19 @@ class AppRouter {
                     name: RouteNames.predictionResult,
                     builder: (context, state) {
                       final id = state.pathParameters['predictionId'] ?? '';
-                      return PredictionResultPage(predictionId: id);
+                      final extra = state.extra;
+
+                      PredictionResultPageArgs? args;
+                      if (extra is PredictionResultPageArgs) {
+                        args = extra;
+                      } else if (extra is Prediction) {
+                        args = PredictionResultPageArgs(prediction: extra);
+                      }
+
+                      return PredictionResultPage(
+                        predictionId: id,
+                        args: args,
+                      );
                     },
                   ),
                 ],

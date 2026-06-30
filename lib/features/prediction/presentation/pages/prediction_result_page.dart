@@ -1,122 +1,301 @@
+// features/prediction/presentation/pages/prediction_result_page.dart
+import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile_app/core/constants/app_constants.dart';
+import 'package:mobile_app/core/error/failures.dart';
 import 'package:mobile_app/core/router/route_names.dart';
 import 'package:mobile_app/core/theme/app_colors.dart';
 import 'package:mobile_app/core/theme/app_dimensions.dart';
 import 'package:mobile_app/core/theme/app_text_styles.dart';
 import 'package:mobile_app/core/widgets/app_button.dart';
 import 'package:mobile_app/core/widgets/app_loading_overlay.dart';
+import 'package:mobile_app/features/prediction/application/create_prediction/create_prediction_bloc.dart';
+import 'package:mobile_app/features/prediction/application/create_prediction/create_prediction_event.dart';
+import 'package:mobile_app/features/prediction/application/create_prediction/create_prediction_state.dart';
 import 'package:mobile_app/features/prediction/domain/entities/prediction.dart';
+import 'package:mobile_app/features/prediction/domain/use_cases/get_prediction_by_id_use_case.dart';
 import 'package:mobile_app/features/prediction/presentation/widgets/confidence_gauge.dart';
 import 'package:mobile_app/features/prediction/presentation/widgets/durian_variety_card.dart';
+import 'package:mobile_app/features/prediction/presentation/widgets/durian_variety_skeleton_card.dart';
 import 'package:mobile_app/features/prediction/presentation/widgets/prediction_status_badge.dart';
+import 'package:mobile_app/injection_container.dart';
 
-class PredictionResultPage extends StatelessWidget {
+class PredictionResultPageArgs {
+  const PredictionResultPageArgs({
+    this.prediction,
+    this.localImageFile,
+  });
+
+  final Prediction? prediction;
+  final File? localImageFile;
+}
+
+class PredictionResultPage extends StatefulWidget {
   const PredictionResultPage({
     super.key,
     required this.predictionId,
-    this.prediction,
+    this.args,
   });
 
   final String predictionId;
+  final PredictionResultPageArgs? args;
 
-  final Prediction? prediction;
+  @override
+  State<PredictionResultPage> createState() => _PredictionResultPageState();
+}
+
+class _PredictionResultPageState extends State<PredictionResultPage> {
+  Prediction? _fetchedPrediction;
+  bool _isLoading = false;
+  String? _errorMsg;
+
+  bool get _isLiveScan => widget.args?.localImageFile != null;
+
+  @override
+  void initState() {
+    super.initState();
+    if (!_isLiveScan && widget.args?.prediction == null) {
+      _fetchPredictionDetail();
+    }
+  }
+
+  Future<void> _fetchPredictionDetail() async {
+    setState(() => _isLoading = true);
+
+    try {
+      final useCase = sl<GetPredictionByIdUseCase>();
+      
+      final result = await useCase(GetPredictionByIdParams(widget.predictionId));
+
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          result.fold(
+            (failure) => _errorMsg = failure.message,
+            (prediction) => _fetchedPrediction = prediction,
+          );
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _errorMsg = 'Gagal memuat data sistem: \n$e';
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    if (prediction == null) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('Hasil Prediksi')),
-        body: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(
-                Icons.error_outline_rounded,
-                color: AppColors.error,
-                size: AppDimensions.iconXxl,
+    if (!_isLiveScan) {
+      if (_isLoading) {
+        return Scaffold(
+          appBar: AppBar(title: const Text('Memuat Detail...')),
+          body: const Padding(
+            padding: EdgeInsets.all(AppDimensions.pagePaddingH),
+            child: DurianVarietySkeletonCard(),
+          ),
+        );
+      }
+
+      final prediction = _fetchedPrediction ?? widget.args?.prediction;
+
+      if (prediction == null) {
+        return Scaffold(
+          appBar: AppBar(title: const Text('Hasil Prediksi')),
+          body: Center(child: Text(_errorMsg ?? 'Data prediksi tidak ditemukan.')),
+        );
+      }
+
+      return _ResultScaffold(
+        heroImage: _HeroImage(imageUrl: prediction.imageUrl),
+        statusBadge: PredictionStatusBadge(prediction: prediction),
+        body: _bodyForFinalPrediction(prediction),
+        bottomBar: const _NormalBottomBar(),
+      );
+    }
+
+    // ── MODE LIVE SCAN ──
+    final localImage = widget.args!.localImageFile!;
+
+    return PopScope(
+      canPop: true,
+      onPopInvokedWithResult: (didPop, result) {
+        final state = context.read<CreatePredictionBloc>().state;
+        if (state is CreatePredictionUploading ||
+            state is CreatePredictionProcessing) {
+          context.read<CreatePredictionBloc>().add(
+                const CreatePredictionCanceled(),
+              );
+        }
+      },
+      child: BlocBuilder<CreatePredictionBloc, CreatePredictionState>(
+        builder: (context, state) => switch (state) {
+          CreatePredictionSuccess(:final prediction) => _ResultScaffold(
+              heroImage: _HeroImage(localFile: localImage),
+              statusBadge: PredictionStatusBadge(prediction: prediction),
+              body: _bodyForFinalPrediction(prediction),
+              bottomBar: _NormalBottomBar(
+                onScanLagi: () => _resetAndGoToScan(context),
               ),
-              SizedBox(height: AppDimensions.md),
-              const Text(
-                'Data prediksi tidak tersedia.',
-                style: AppTextStyles.headlineSmall,
+            ),
+          CreatePredictionFailure(:final failure) => _ResultScaffold(
+              heroImage: _HeroImage(localFile: localImage),
+              statusBadge: PredictionStatusBadge.fromString('FAILED'),
+              body: _LiveFailedContent(
+                failure: failure,
+                onRetry: () => context
+                    .read<CreatePredictionBloc>()
+                    .add(CreatePredictionStarted(localImage)),
               ),
-              const SizedBox(height: AppDimensions.xl),
-              AppButton(
-                label: 'Kembali ke Scan',
-                onPressed: () => context.goNamed(RouteNames.scan),
-                isFullWidth: false,
+              bottomBar: _RetryBottomBar(
+                onRetry: () => context
+                    .read<CreatePredictionBloc>()
+                    .add(CreatePredictionStarted(localImage)),
+                onPickNew: () => _resetAndGoToScan(context),
               ),
-            ],
+            ),
+          _ => _ResultScaffold(
+              heroImage: _HeroImage(localFile: localImage),
+              statusBadge: PredictionStatusBadge.fromString('PENDING'),
+              body: const DurianVarietySkeletonCard(),
+              bottomBar: _CancelBottomBar(
+                onCancel: () {
+                  context
+                      .read<CreatePredictionBloc>()
+                      .add(const CreatePredictionCanceled());
+                  context.pop();
+                },
+              ),
+            ),
+        },
+      ),
+    );
+  }
+
+  void _resetAndGoToScan(BuildContext context) {
+    context.read<CreatePredictionBloc>().add(const CreatePredictionReset());
+    context.goNamed(RouteNames.scan);
+  }
+
+  Widget _bodyForFinalPrediction(Prediction p) {
+    if (p.isStrictSuccess && p.predictedClass != null) {
+      return _SuccessContent(prediction: p);
+    }
+    if (p.isFailed || (p.isSuccess && !p.hasHighConfidence)) {
+      return _FailedContent(
+        prediction: p,
+        customMessage: (p.isSuccess && !p.hasHighConfidence)
+            ? 'Hasil prediksi tidak meyakinkan. Mohon foto ulang dengan pencahayaan yang lebih baik.'
+            : null,
+      );
+    }
+    return _PendingContent(prediction: p);
+  }
+}
+
+// ── Scaffold reusable ──────────────────────────────────────────────────────────
+
+class _ResultScaffold extends StatelessWidget {
+  const _ResultScaffold({
+    required this.heroImage,
+    required this.statusBadge,
+    required this.body,
+    required this.bottomBar,
+  });
+
+  final Widget heroImage;
+  final Widget statusBadge;
+  final Widget body;
+  final Widget bottomBar;
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        backgroundColor: Theme.of(context).colorScheme.background,
+        body: CustomScrollView(
+          slivers: [
+            SliverAppBar(
+              expandedHeight: AppDimensions.imagePreviewHeight,
+              pinned: true,
+              backgroundColor: AppColors.primary,
+              flexibleSpace: FlexibleSpaceBar(
+                background: heroImage,
+                title: Text(
+                  'Hasil Prediksi',
+                  style: AppTextStyles.titleLarge.copyWith(
+                    color: AppColors.white,
+                    shadows: const [
+                      Shadow(color: Colors.black54, blurRadius: 8),
+                    ],
+                  ),
+                ),
+              ),
+              actions: [
+                Padding(
+                  padding: const EdgeInsets.only(right: AppDimensions.md),
+                  child: Center(
+                    child: statusBadge,
+                  ),
+                ),
+              ],
+            ),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppDimensions.pagePaddingH,
+                  AppDimensions.lg,
+                  AppDimensions.pagePaddingH,
+                  AppDimensions.xxl,
+                ),
+                child: body,
+              ),
+            ),
+          ],
+        ),
+        bottomNavigationBar: bottomBar,
+      );
+}
+
+// ── Hero Image (dual source: File lokal atau URL) ─────────────────────────────
+
+class _HeroImage extends StatelessWidget {
+  const _HeroImage({this.imageUrl, this.localFile});
+
+  final String? imageUrl;
+  final File? localFile;
+
+  @override
+  Widget build(BuildContext context) {
+    if (localFile != null) {
+      return Image.file(localFile!, fit: BoxFit.cover);
+    }
+    if (imageUrl != null) {
+      return CachedNetworkImage(
+        imageUrl: imageUrl!,
+        fit: BoxFit.cover,
+        placeholder: (_, __) => const AppShimmer(
+          width: double.infinity,
+          height: double.infinity,
+        ),
+        errorWidget: (_, __, ___) => Container(
+          color: AppColors.surfaceAlt,
+          child: const Icon(
+            Icons.broken_image_outlined,
+            size: AppDimensions.iconXl,
+            color: AppColors.textHint,
           ),
         ),
       );
     }
-
-    final p = prediction!;
-
-    return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.background,
-      body: CustomScrollView(
-        slivers: [
-          // ── SliverAppBar dengan gambar durian ─────────────────────────────
-          SliverAppBar(
-            expandedHeight: AppDimensions.imagePreviewHeight,
-            pinned: true,
-            backgroundColor: AppColors.primary,
-            flexibleSpace: FlexibleSpaceBar(
-              background: _HeroImage(imageUrl: p.imageUrl),
-              title: Text(
-                'Hasil Prediksi',
-                style: AppTextStyles.titleLarge.copyWith(
-                  color: AppColors.white,
-                  shadows: [
-                    const Shadow(
-                      color: Colors.black54,
-                      blurRadius: 8,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            actions: [
-              Padding(
-                padding: EdgeInsets.only(right: AppDimensions.md),
-                child: Center(
-                  child: PredictionStatusBadge.fromString(p.status.value),
-                ),
-              ),
-            ],
-          ),
-
-          // ── Konten ────────────────────────────────────────────────────────
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppDimensions.pagePaddingH,
-                AppDimensions.lg,
-                AppDimensions.pagePaddingH,
-                AppDimensions.xxl,
-              ),
-              child: p.isSuccess && p.predictedClass != null
-                  ? _SuccessContent(prediction: p)
-                  : p.isFailed
-                      ? _FailedContent(prediction: p)
-                      : _PendingContent(prediction: p),
-            ),
-          ),
-        ],
-      ),
-
-      // ── Bottom action bar ────────────────────────────────────────────────
-      bottomNavigationBar: _BottomBar(prediction: p),
-    );
+    return Container(color: AppColors.surfaceAlt);
   }
 }
 
-// ── Content sections ──────────────────────────────────────────────────────────
+// ── Content sections (mode final / riwayat) ───────────────────────────────────
 
 class _SuccessContent extends StatelessWidget {
   const _SuccessContent({required this.prediction});
@@ -126,32 +305,31 @@ class _SuccessContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = prediction;
-    final varietyName = AppConstants.durianVarietyNames[p.predictedClass] ??
-        p.predictedClass ??
-        'Tidak diketahui';
+    final varietyName = p.predictedClass != null 
+        ? (AppConstants.durianVarietyNames[p.predictedClass] ?? p.predictedClass!)
+        : 'Tidak diketahui';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // ── Kartu varietas utama ─────────────────────────────────────────
         DurianVarietyCard(
-          varietyCode: p.predictedClass!,
+          varietyCode: p.predictedClass ?? '',
           varietyName: varietyName,
-          localName: null,
-          origin: null,
-          description: _varietyDescription(p.predictedClass!),
+          localName: p.localName, 
+          origin: p.origin,
+          description: p.description ?? 'Deskripsi varietas tidak tersedia.',
           imageUrl: p.imageUrl,
           confidenceWidget: ConfidenceGauge(
             score: p.confidence?.value ?? 0.0,
             varietyCode: p.predictedClass,
           ),
+          marketPriceSummary: p.marketPriceSummary,
         ),
         const SizedBox(height: AppDimensions.xl),
 
-        // ── Skor semua kelas ─────────────────────────────────────────────
         if (p.allScores != null && p.allScores!.isNotEmpty) ...[
           const Text('Perbandingan Varietas', style: AppTextStyles.headlineSmall),
-          SizedBox(height: AppDimensions.md),
+          const SizedBox(height: AppDimensions.md),
           _AllScoresSection(
             allScores: p.allScores!,
             predictedClass: p.predictedClass,
@@ -159,34 +337,10 @@ class _SuccessContent extends StatelessWidget {
           const SizedBox(height: AppDimensions.xl),
         ],
 
-        // ── Metadata ────────────────────────────────────────────────────
         _MetadataSection(prediction: p),
       ],
     );
   }
-
-  String? _varietyDescription(String code) => switch (code) {
-        'D197' =>
-          'Musang King atau Mao Shan Wang adalah varietas premium asal Malaysia '
-              'yang terkenal dengan rasa creamy, pahit manis yang seimbang, '
-              'dan warna daging kuning emas.',
-        'D24' =>
-          'Sultan atau D24 adalah varietas klasik Malaysia dengan rasa manis '
-              'dan sedikit pahit. Dagingnya lembut dengan tekstur creamy.',
-        'D200' =>
-          'Durian D200 dikenal dengan ukuran buah yang besar dan rasa yang '
-              'kaya. Teksturnya lembut dengan rasa manis yang intens.',
-        'D101' =>
-          'Durian D101 memiliki daging berwarna kuning pucat hingga kuning. '
-              'Rasanya manis dengan aroma yang harum dan khas.',
-        'D13' =>
-          'Durian D13 atau Kunyit memiliki warna daging kuning seperti '
-              'kunyit. Rasanya manis dengan sedikit pahit yang menyegarkan.',
-        'D2' =>
-          'Durian D2 adalah varietas dengan cita rasa manis dan tekstur '
-              'yang lembut. Cocok untuk pemula yang baru mengenal durian.',
-        _ => null,
-      };
 }
 
 class _AllScoresSection extends StatelessWidget {
@@ -333,9 +487,13 @@ class _ScoreBarState extends State<_ScoreBar>
 }
 
 class _FailedContent extends StatelessWidget {
-  const _FailedContent({required this.prediction});
+  const _FailedContent({
+    required this.prediction,
+    this.customMessage,
+  });
 
   final Prediction prediction;
+  final String? customMessage;
 
   @override
   Widget build(BuildContext context) => Column(
@@ -353,7 +511,7 @@ class _FailedContent extends StatelessWidget {
                   color: AppColors.error,
                   size: AppDimensions.iconXxl,
                 ),
-                SizedBox(height: AppDimensions.md),
+                const SizedBox(height: AppDimensions.md),
                 Text(
                   'AI Gagal Menganalisis',
                   style: AppTextStyles.headlineSmall.copyWith(
@@ -363,7 +521,7 @@ class _FailedContent extends StatelessWidget {
                 ),
                 const SizedBox(height: AppDimensions.sm),
                 Text(
-                  prediction.errorMessage ??
+                  customMessage ?? prediction.errorMessage ??
                       'Terjadi kesalahan saat memproses gambar. '
                           'Pastikan gambar menampilkan durian dengan jelas.',
                   style: AppTextStyles.bodyMedium.copyWith(
@@ -380,6 +538,47 @@ class _FailedContent extends StatelessWidget {
       );
 }
 
+class _LiveFailedContent extends StatelessWidget {
+  const _LiveFailedContent({required this.failure, required this.onRetry});
+
+  final Failure failure;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.all(AppDimensions.xl),
+        decoration: BoxDecoration(
+          color: AppColors.errorLight,
+          borderRadius: BorderRadius.circular(AppDimensions.radiusXl),
+        ),
+        child: Column(
+          children: [
+            const Icon(
+              Icons.cancel_outlined,
+              color: AppColors.error,
+              size: AppDimensions.iconXxl,
+            ),
+            const SizedBox(height: AppDimensions.md),
+            Text(
+              'AI Gagal Menganalisis',
+              style: AppTextStyles.headlineSmall.copyWith(
+                color: AppColors.error,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: AppDimensions.sm),
+            Text(
+              failure.message,
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: AppColors.textSecondary,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      );
+}
+
 class _PendingContent extends StatelessWidget {
   const _PendingContent({required this.prediction});
 
@@ -390,7 +589,7 @@ class _PendingContent extends StatelessWidget {
         children: [
           const CircularProgressIndicator(color: AppColors.primary),
           const SizedBox(height: AppDimensions.lg),
-          Text(
+          const Text(
             'Sedang diproses...',
             style: AppTextStyles.headlineSmall,
           ),
@@ -424,7 +623,7 @@ class _MetadataSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        padding: EdgeInsets.all(AppDimensions.md),
+        padding: const EdgeInsets.all(AppDimensions.md),
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
@@ -433,7 +632,7 @@ class _MetadataSection extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Informasi Prediksi', style: AppTextStyles.titleMedium),
+            const Text('Informasi Prediksi', style: AppTextStyles.titleMedium),
             const Divider(height: AppDimensions.lg),
             _MetaRow(
               label: 'ID',
@@ -479,37 +678,17 @@ class _MetaRow extends StatelessWidget {
       );
 }
 
-class _HeroImage extends StatelessWidget {
-  const _HeroImage({required this.imageUrl});
+// ── Bottom bars ───────────────────────────────────────────────────────────────
 
-  final String imageUrl;
+class _NormalBottomBar extends StatelessWidget {
+  const _NormalBottomBar({this.onScanLagi});
 
-  @override
-  Widget build(BuildContext context) => CachedNetworkImage(
-        imageUrl: imageUrl,
-        fit: BoxFit.cover,
-        placeholder: (_, __) =>
-            const AppShimmer(width: double.infinity, height: double.infinity),
-        errorWidget: (_, __, ___) => Container(
-          color: AppColors.surfaceAlt,
-          child: const Icon(
-            Icons.broken_image_outlined,
-            size: AppDimensions.iconXl,
-            color: AppColors.textHint,
-          ),
-        ),
-      );
-}
-
-class _BottomBar extends StatelessWidget {
-  const _BottomBar({required this.prediction});
-
-  final Prediction prediction;
+  final VoidCallback? onScanLagi;
 
   @override
   Widget build(BuildContext context) => SafeArea(
         child: Padding(
-          padding: EdgeInsets.fromLTRB(
+          padding: const EdgeInsets.fromLTRB(
             AppDimensions.pagePaddingH,
             AppDimensions.sm,
             AppDimensions.pagePaddingH,
@@ -529,8 +708,73 @@ class _BottomBar extends StatelessWidget {
               Expanded(
                 child: AppButton(
                   label: 'Scan Lagi',
-                  onPressed: () => context.goNamed(RouteNames.scan),
+                  onPressed: onScanLagi ??
+                      () => context.goNamed(RouteNames.scan),
                   icon: Icons.qr_code_scanner_rounded,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+}
+
+class _CancelBottomBar extends StatelessWidget {
+  const _CancelBottomBar({required this.onCancel});
+
+  final VoidCallback onCancel;
+
+  @override
+  Widget build(BuildContext context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppDimensions.pagePaddingH,
+            AppDimensions.sm,
+            AppDimensions.pagePaddingH,
+            AppDimensions.md,
+          ),
+          child: AppOutlinedButton(
+            label: 'Batalkan Scan',
+            onPressed: onCancel,
+            icon: Icons.close_rounded,
+          ),
+        ),
+      );
+}
+
+class _RetryBottomBar extends StatelessWidget {
+  const _RetryBottomBar({
+    required this.onRetry,
+    required this.onPickNew,
+  });
+
+  final VoidCallback onRetry;
+  final VoidCallback onPickNew;
+
+  @override
+  Widget build(BuildContext context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppDimensions.pagePaddingH,
+            AppDimensions.sm,
+            AppDimensions.pagePaddingH,
+            AppDimensions.md,
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: AppOutlinedButton(
+                  label: 'Scan Baru',
+                  onPressed: onPickNew,
+                  icon: Icons.add_photo_alternate_outlined,
+                ),
+              ),
+              const SizedBox(width: AppDimensions.sm),
+              Expanded(
+                child: AppButton(
+                  label: 'Coba Lagi',
+                  onPressed: onRetry,
+                  icon: Icons.refresh_rounded,
                 ),
               ),
             ],

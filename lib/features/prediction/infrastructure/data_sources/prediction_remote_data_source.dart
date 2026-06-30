@@ -1,3 +1,4 @@
+// features/prediction/infrastructure/data_sources/prediction_remote_data_source.dart
 import 'dart:io';
 
 import 'package:dio/dio.dart';
@@ -6,19 +7,15 @@ import 'package:mobile_app/core/constants/api_endpoints.dart';
 import 'package:mobile_app/core/error/exceptions.dart';
 import 'package:mobile_app/core/network/api_client.dart';
 import 'package:mobile_app/core/utils/file_utils.dart';
-import 'package:mobile_app/features/prediction/infrastructure/models/create_prediction_request_model.dart';
 import 'package:mobile_app/features/prediction/infrastructure/models/paginated_prediction_response_model.dart';
 import 'package:mobile_app/features/prediction/infrastructure/models/prediction_response_model.dart';
 
 abstract class PredictionRemoteDataSource {
-  Future<({String imageUrl, String fileKey})> uploadImage(
+  Future<PredictionResponseModel> createPrediction(
     File image, {
     void Function(int sent, int total)? onProgress,
+    CancelToken? cancelToken,
   });
-
-  Future<PredictionResponseModel> createPrediction(
-    CreatePredictionRequestModel request,
-  );
 
   Future<PredictionResponseModel> getPredictionById(String id);
 
@@ -36,9 +33,10 @@ class PredictionRemoteDataSourceImpl implements PredictionRemoteDataSource {
   final ApiClient _apiClient;
 
   @override
-  Future<({String imageUrl, String fileKey})> uploadImage(
+  Future<PredictionResponseModel> createPrediction(
     File image, {
     void Function(int sent, int total)? onProgress,
+    CancelToken? cancelToken,
   }) async {
     final fileName = FileUtils.getFileName(image.path);
     final mimeType = FileUtils.getMimeType(image.path) ?? 'image/jpeg';
@@ -49,38 +47,13 @@ class PredictionRemoteDataSourceImpl implements PredictionRemoteDataSource {
         filename: fileName,
         contentType: MediaType.parse(mimeType),
       ),
-      'context': 'predictions',
     });
 
     final response = await _apiClient.postMultipart<Map<String, dynamic>>(
-      ApiEndpoints.storageUpload,
+      ApiEndpoints.predictions,
       formData: formData,
       onSendProgress: onProgress,
-    );
-
-    final data = response.data;
-    if (data == null ||
-        data['imageUrl'] == null ||
-        data['fileKey'] == null) {
-      throw const ServerException(
-        statusCode: 500,
-        message: 'Respons upload tidak valid.',
-      );
-    }
-
-    return (
-      imageUrl: data['imageUrl'] as String,
-      fileKey: data['fileKey'] as String,
-    );
-  }
-
-  @override
-  Future<PredictionResponseModel> createPrediction(
-    CreatePredictionRequestModel request,
-  ) async {
-    final response = await _apiClient.post<Map<String, dynamic>>(
-      ApiEndpoints.predictions,
-      data: request.toJson(),
+      cancelToken: cancelToken,
     );
 
     final data = response.data;

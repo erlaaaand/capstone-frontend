@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:dio_cache_interceptor/dio_cache_interceptor.dart';
 import 'package:mobile_app/core/config/env_config.dart';
 import 'package:mobile_app/core/constants/app_constants.dart';
 import 'package:mobile_app/core/network/auth_interceptor.dart';
@@ -23,9 +24,19 @@ class ApiClient {
       },
     );
 
+    final cacheOptions = CacheOptions(
+      store: MemCacheStore(), 
+      policy: CachePolicy.forceCache, 
+      hitCacheOnErrorCodes: [500, 502, 503, 504], 
+      maxStale: const Duration(minutes: 1),
+      priority: CachePriority.normal,
+    );
+
     final dio = Dio(options);
+    
     dio.interceptors.addAll([
       authInterceptor,
+      DioCacheInterceptor(options: cacheOptions),
       ErrorInterceptor(),
       if (LoggingInterceptor.create() case final logger?) logger,
     ]);
@@ -56,6 +67,21 @@ class ApiClient {
           queryParameters: queryParameters,
           options: options,
           cancelToken: cancelToken);
+
+  Future<Response<T>> put<T>(
+    String path, {
+    dynamic data,
+    Map<String, dynamic>? queryParameters,
+    Options? options,
+    CancelToken? cancelToken,
+  }) =>
+      _dio.put<T>(
+        path,
+        data: data,
+        queryParameters: queryParameters,
+        options: options,
+        cancelToken: cancelToken,
+      );
 
   Future<Response<T>> patch<T>(
     String path, {

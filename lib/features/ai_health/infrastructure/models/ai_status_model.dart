@@ -20,18 +20,19 @@ class AiStatusModel {
   factory AiStatusModel.fromJson(Map<String, dynamic> json) {
     final rawStatus = json['status'];
     final statusStr = rawStatus is String ? rawStatus.toLowerCase().trim() : null;
-    
+
     final isAvailableRaw = json['isAvailable'] ?? json['is_available'];
-    
+
     final mlRaw = json['modelLoaded'] ?? json['model_loaded'];
-    final bool? modelLoaded = mlRaw is bool ? mlRaw : 
-                              (mlRaw is String ? mlRaw.toLowerCase() == 'true' : null);
+    final bool? modelLoaded = mlRaw is bool
+        ? mlRaw
+        : (mlRaw is String ? mlRaw.toLowerCase() == 'true' : null);
 
     final bool available = switch (statusStr) {
       'online'  => true,
+      'loading' => true,
       'offline' => false,
-      'loading' => false,
-      _         => switch (isAvailableRaw) {
+      _ => switch (isAvailableRaw) {
           bool b   => b,
           String s => s.toLowerCase() == 'true',
           _        => modelLoaded ?? false,

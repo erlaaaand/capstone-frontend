@@ -96,7 +96,6 @@ class _ConfidenceGaugeState extends State<ConfidenceGauge>
                   ),
                 ),
 
-                // Label tengah
                 Positioned(
                   bottom: 0,
                   child: Column(
@@ -143,8 +142,8 @@ class _GaugePainter extends CustomPainter {
     final center = Offset(size.width / 2, size.height * 0.78);
     final radius = size.width / 2 - strokeWidth;
 
-    const startAngle = math.pi;       // 180° (kiri)
-    const sweepFull  = math.pi;       // 180° (kanan)
+    const startAngle = math.pi;
+    const sweepFull  = math.pi;
 
     // Track (abu-abu)
     canvas.drawArc(
@@ -159,7 +158,6 @@ class _GaugePainter extends CustomPainter {
         ..strokeCap = StrokeCap.round,
     );
 
-    // Fill (warna score)
     if (score > 0) {
       canvas.drawArc(
         Rect.fromCircle(center: center, radius: radius),

@@ -4,6 +4,7 @@ import 'package:mobile_app/core/theme/app_dimensions.dart';
 import 'package:mobile_app/core/theme/app_text_styles.dart';
 import 'package:mobile_app/core/widgets/app_loading_overlay.dart';
 import 'package:flutter/material.dart';
+import 'package:mobile_app/features/prediction/domain/entities/prediction.dart'; 
 
 class DurianVarietyCard extends StatelessWidget {
   const DurianVarietyCard({
@@ -15,6 +16,7 @@ class DurianVarietyCard extends StatelessWidget {
     required this.description,
     required this.imageUrl,
     required this.confidenceWidget,
+    this.marketPriceSummary,
   });
 
   final String varietyCode;
@@ -23,9 +25,8 @@ class DurianVarietyCard extends StatelessWidget {
   final String? origin;
   final String? description;
   final String imageUrl;
-
   final Widget confidenceWidget;
-
+  final MarketPriceSummary? marketPriceSummary;
   @override
   Widget build(BuildContext context) => Container(
         decoration: BoxDecoration(
@@ -43,7 +44,6 @@ class DurianVarietyCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── Gambar durian ───────────────────────────────────────────────
             _DurianImage(imageUrl: imageUrl),
 
             Padding(
@@ -51,11 +51,9 @@ class DurianVarietyCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // ── Kode varietas ─────────────────────────────────────────
                   _VarietyCodeChip(code: varietyCode),
                   const SizedBox(height: AppDimensions.sm),
 
-                  // ── Nama ──────────────────────────────────────────────────
                   Text(varietyName, style: AppTextStyles.headlineMedium),
 
                   if (localName != null) ...[
@@ -69,7 +67,39 @@ class DurianVarietyCard extends StatelessWidget {
                     ),
                   ],
 
-                  // ── Gauge ─────────────────────────────────────────────────
+                  const SizedBox(height: AppDimensions.md),
+                  if (marketPriceSummary != null)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: AppColors.successLight,
+                        borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+                        border: Border.all(color: AppColors.success.withOpacity(0.3)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.sell_outlined, color: AppColors.success, size: 18),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Rp ${marketPriceSummary!.minPriceKg} - Rp ${marketPriceSummary!.maxPriceKg} /kg',
+                            style: AppTextStyles.titleMedium.copyWith(
+                              color: AppColors.success,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  else
+                    Text(
+                      'Harga pasar tidak tersedia',
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: AppColors.textHint,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+
                   const SizedBox(height: AppDimensions.lg),
                   Center(child: confidenceWidget),
                   const SizedBox(height: AppDimensions.xs),
@@ -80,13 +110,11 @@ class DurianVarietyCard extends StatelessWidget {
                     ),
                   ),
 
-                  // ── Divider ───────────────────────────────────────────────
                   Padding(
-                    padding: EdgeInsets.symmetric(vertical: AppDimensions.md),
+                    padding: const EdgeInsets.symmetric(vertical: AppDimensions.md),
                     child: const Divider(),
                   ),
 
-                  // ── Asal ──────────────────────────────────────────────────
                   if (origin != null)
                     _InfoRow(
                       icon: Icons.place_outlined,
@@ -94,10 +122,9 @@ class DurianVarietyCard extends StatelessWidget {
                       value: origin!,
                     ),
 
-                  // ── Deskripsi ─────────────────────────────────────────────
                   if (description != null) ...[
-                    SizedBox(height: AppDimensions.md),
-                    Text('Deskripsi', style: AppTextStyles.titleMedium),
+                    const SizedBox(height: AppDimensions.md),
+                    const Text('Deskripsi', style: AppTextStyles.titleMedium),
                     const SizedBox(height: AppDimensions.xs),
                     _ExpandableDescription(text: description!),
                   ],

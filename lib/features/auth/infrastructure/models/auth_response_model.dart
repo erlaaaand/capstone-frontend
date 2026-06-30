@@ -13,7 +13,7 @@ class AuthResponseModel {
       AuthResponseModel(
         accessToken: json['accessToken'] as String,
         tokenType: json['tokenType'] as String,
-        expiresIn: json['expiresIn'] as String,
+        expiresIn: json['expiresIn'].toString(),
         user: AuthUserModel.fromJson(json['user'] as Map<String, dynamic>),
       );
 

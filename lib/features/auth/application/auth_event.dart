@@ -40,3 +40,9 @@ final class AuthLogoutRequested extends AuthEvent {
   @override
   List<Object?> get props => [];
 }
+
+final class AuthSessionExpired extends AuthEvent {
+  const AuthSessionExpired();
+  @override
+  List<Object?> get props => [];
+}

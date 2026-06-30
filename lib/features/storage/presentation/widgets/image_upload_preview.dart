@@ -7,13 +7,6 @@ import 'package:mobile_app/core/utils/file_utils.dart';
 import 'package:mobile_app/core/widgets/app_button.dart';
 import 'package:flutter/material.dart';
 
-/// Preview gambar yang telah dipilih user sebelum proses upload & prediksi.
-///
-/// Menampilkan:
-/// - Thumbnail gambar full-width
-/// - Nama file + ukuran
-/// - Tombol ganti gambar
-/// - Tombol scan (aksi utama)
 class ImageUploadPreview extends StatelessWidget {
   const ImageUploadPreview({
     super.key,
@@ -32,7 +25,6 @@ class ImageUploadPreview extends StatelessWidget {
   Widget build(BuildContext context) => Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ── Gambar Preview ────────────────────────────────────────────────
           ClipRRect(
             borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
             child: Stack(
@@ -43,7 +35,6 @@ class ImageUploadPreview extends StatelessWidget {
                   height: AppDimensions.imagePreviewHeight,
                   fit: BoxFit.cover,
                 ),
-                // Overlay gelap saat loading
                 if (isLoading)
                   Positioned.fill(
                     child: ColoredBox(
@@ -56,7 +47,6 @@ class ImageUploadPreview extends StatelessWidget {
                       ),
                     ),
                   ),
-                // Badge ganti gambar (pojok kanan atas)
                 if (!isLoading)
                   Positioned(
                     top: AppDimensions.sm,
@@ -105,7 +95,6 @@ class ImageUploadPreview extends StatelessWidget {
           ),
           const SizedBox(height: AppDimensions.lg),
 
-          // ── Tombol Scan ───────────────────────────────────────────────────
           AppButton(
             label: isLoading ? 'Sedang Memproses...' : 'Scan Durian',
             onPressed: isLoading ? null : onScan,

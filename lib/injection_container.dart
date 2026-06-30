@@ -58,19 +58,12 @@ import 'package:mobile_app/features/ai_health/domain/use_cases/stream_ai_status_
 import 'package:mobile_app/features/ai_health/infrastructure/data_sources/ai_health_remote_data_source.dart';
 import 'package:mobile_app/features/ai_health/infrastructure/repositories/ai_health_repository_impl.dart';
 
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:mobile_app/core/theme/theme_cubit.dart';
+
 /// Service Locator global.
 final sl = GetIt.instance;
 
-/// Inisialisasi seluruh dependency injection.
-///
-/// Dipanggil sekali di [main] sebelum [runApp]:
-/// ```dart
-/// await initDependencies();
-/// runApp(const App());
-/// ```
-///
-/// Urutan registrasi penting:
-/// Core → Auth → Prediction → User → Storage → AiHealth
 Future<void> initDependencies() async {
   await _registerCore();
   await _registerAuth();
@@ -87,6 +80,11 @@ Future<void> _registerCore() async {
   sl.registerLazySingleton(() => const FlutterSecureStorage());
   sl.registerLazySingleton(() => Connectivity());
 
+  final sharedPreferences = await SharedPreferences.getInstance();
+  sl.registerLazySingleton(() => sharedPreferences);
+
+  sl.registerFactory(() => ThemeCubit(sl<SharedPreferences>()));
+
   // ── Services ─────────────────────────────────────────────────────────────────
   sl.registerLazySingleton(
     () => SecureStorageService(sl<FlutterSecureStorage>()),
@@ -96,16 +94,11 @@ Future<void> _registerCore() async {
   );
 
   // ── Network ───────────────────────────────────────────────────────────────────
-  // Catatan: onUnauthorized menggunakan sl<AuthBloc>() secara lazy —
-  // AuthBloc baru terdaftar di _registerAuth(), namun callback ini
-  // hanya dipanggil saat runtime (401 terjadi), bukan saat registrasi.
   sl.registerLazySingleton(
     () => AuthInterceptor(
       secureStorage: sl<SecureStorageService>(),
       onUnauthorized: () {
-        // Dispatch logout agar AuthBloc emit AuthUnauthenticated,
-        // sehingga BlocListener di setiap halaman dapat redirect ke login.
-        sl<AuthBloc>().add(const AuthLogoutRequested());
+        sl<AuthBloc>().add(const AuthSessionExpired());
       },
     ),
   );
@@ -151,11 +144,9 @@ Future<void> _registerAuth() async {
   sl.registerLazySingleton(() => GetAuthMeUseCase(sl<AuthRepository>()));
   sl.registerLazySingleton(() => LogoutUseCase(sl<AuthRepository>()));
 
-  // BLoC — singleton agar state autentikasi terpusat di seluruh app.
-  // Di-provide di root oleh App widget sehingga semua halaman bisa
-  // mengakses tanpa BlocProvider tambahan.
   sl.registerLazySingleton(
     () => AuthBloc(
+      secureStorage: sl<SecureStorageService>(),
       loginUseCase: sl<LoginUseCase>(),
       registerUseCase: sl<RegisterUseCase>(),
       getAuthMeUseCase: sl<GetAuthMeUseCase>(),
@@ -191,12 +182,9 @@ Future<void> _registerPrediction() async {
     () => DeletePredictionUseCase(sl<PredictionRepository>()),
   );
 
-  // BLoC — factory karena setiap halaman membutuhkan instance baru
-  // agar state tidak terbawa saat navigasi bolak-balik.
   sl.registerFactory(
     () => CreatePredictionBloc(
       createPredictionUseCase: sl<CreatePredictionUseCase>(),
-      getPredictionByIdUseCase: sl<GetPredictionByIdUseCase>(),
     ),
   );
   sl.registerFactory(
@@ -228,7 +216,6 @@ Future<void> _registerUser() async {
   sl.registerLazySingleton(() => GetUserByIdUseCase(sl<UserRepository>()));
   sl.registerLazySingleton(() => UpdateUserUseCase(sl<UserRepository>()));
 
-  // BLoC — factory karena hanya digunakan di halaman profil.
   sl.registerFactory(
     () => ProfileBloc(
       getMyProfileUseCase: sl<GetMyProfileUseCase>(),
@@ -257,7 +244,6 @@ Future<void> _registerStorage() async {
   sl.registerLazySingleton(() => UploadImageUseCase(sl<StorageRepository>()));
   sl.registerLazySingleton(() => DeleteFileUseCase(sl<StorageRepository>()));
 
-  // Cubit — factory karena digunakan per-flow operasi.
   sl.registerFactory(
     () => StorageCubit(
       uploadImageUseCase: sl<UploadImageUseCase>(),
@@ -290,8 +276,6 @@ Future<void> _registerAiHealth() async {
     () => StreamAiStatusUseCase(sl<AiHealthRepository>()),
   );
 
-  // Cubit — factory karena di-provide di ShellRoute dan otomatis
-  // di-dispose saat user keluar dari shell (logout).
   sl.registerFactory(
     () => AiHealthCubit(
       getCurrentAiStatusUseCase: sl<GetCurrentAiStatusUseCase>(),

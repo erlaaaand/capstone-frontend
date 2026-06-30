@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:mobile_app/core/constants/api_endpoints.dart';
 import 'package:mobile_app/core/error/exceptions.dart';
 import 'package:mobile_app/core/network/api_client.dart';
@@ -27,6 +28,8 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       return AuthResponseModel.fromJson(response.data!);
     } on ServerException {
       rethrow;
+    } on DioException {
+      rethrow;
     } catch (e) {
       throw ServerException(
         statusCode: 0,
@@ -45,6 +48,8 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       return AuthResponseModel.fromJson(response.data!);
     } on ServerException {
       rethrow;
+    } on DioException {
+      rethrow;
     } catch (e) {
       throw ServerException(
         statusCode: 0,
@@ -61,6 +66,8 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       );
       return AuthUserModel.fromJson(response.data!);
     } on ServerException {
+      rethrow;
+    } on DioException {
       rethrow;
     } catch (e) {
       throw ServerException(

@@ -128,7 +128,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
               // ── Edit Nama ────────────────────────────────────────────
               EditNameSection(user: user),
-              const SizedBox(height: AppDimensions.md),
+              SizedBox(height: AppDimensions.md),
 
               // ── Edit Password ────────────────────────────────────────
               EditPasswordSection(userId: user.id),
@@ -168,7 +168,7 @@ class _AccountInfoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.all(AppDimensions.md),
+        padding: EdgeInsets.all(AppDimensions.md),
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
@@ -202,7 +202,7 @@ class _AccountInfoCard extends StatelessWidget {
                 Text('Info Akun', style: AppTextStyles.titleLarge),
               ],
             ),
-            const SizedBox(height: AppDimensions.md),
+            SizedBox(height: AppDimensions.md),
             const Divider(height: 1),
             const SizedBox(height: AppDimensions.sm),
             _InfoRow(

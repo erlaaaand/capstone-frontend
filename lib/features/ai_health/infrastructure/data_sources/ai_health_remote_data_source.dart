@@ -40,6 +40,7 @@ class AiHealthRemoteDataSourceImpl implements AiHealthRemoteDataSource {
   }
 
   // ── SSE ───────────────────────────────────────────────────────────────────
+
   @override
   Stream<AiStatusModel> streamStatus() async* {
     final options = Options(
@@ -49,11 +50,10 @@ class AiHealthRemoteDataSourceImpl implements AiHealthRemoteDataSource {
         'Cache-Control': 'no-cache',
         'Connection': 'keep-alive',
       },
-      receiveTimeout: const Duration(hours: 1),
+      receiveTimeout: null,
     );
 
-    final url =
-        '${EnvConfig.apiBaseUrl}${ApiEndpoints.aiStatusStream}';
+    final url = '${EnvConfig.apiBaseUrl}${ApiEndpoints.aiStatusStream}';
 
     Response<ResponseBody>? response;
 
@@ -79,11 +79,15 @@ class AiHealthRemoteDataSourceImpl implements AiHealthRemoteDataSource {
     await for (final bytes in byteStream) {
       buffer.write(utf8.decode(bytes, allowMalformed: true));
 
-      final raw = buffer.toString();
-      final parts = raw.split('\n\n');
-
+      final normalized = buffer
+          .toString()
+          .replaceAll('\r\n', '\n')
+          .replaceAll('\r', '\n');
       buffer.clear();
-      final incomplete = raw.endsWith('\n\n') ? '' : parts.removeLast();
+
+      final parts = normalized.split('\n\n');
+
+      final incomplete = normalized.endsWith('\n\n') ? '' : parts.removeLast();
       if (incomplete.isNotEmpty) buffer.write(incomplete);
 
       for (final eventBlock in parts) {
@@ -98,22 +102,27 @@ class AiHealthRemoteDataSourceImpl implements AiHealthRemoteDataSource {
   AiStatusModel? _parseSseBlock(String block) {
     if (block.trim().isEmpty) return null;
 
+    final dataBuffer = StringBuffer();
+
     for (final line in block.split('\n')) {
       final trimmed = line.trim();
       if (!trimmed.startsWith('data:')) continue;
 
-      final jsonStr = trimmed.substring('data:'.length).trim();
-      if (jsonStr.isEmpty || jsonStr == '[DONE]') continue;
-
-      try {
-        final json = jsonDecode(jsonStr) as Map<String, dynamic>;
-        return AiStatusModel.fromJson(json);
-      } catch (_) {
-        continue;
-      }
+      final payloadStr = trimmed.substring('data:'.length).trim();
+      if (payloadStr.isEmpty || payloadStr == '[DONE]') continue;
+      
+      dataBuffer.write(payloadStr);
     }
 
-    return null;
+    final combinedJsonStr = dataBuffer.toString();
+    if (combinedJsonStr.isEmpty) return null;
+
+    try {
+      final json = jsonDecode(combinedJsonStr) as Map<String, dynamic>;
+      return AiStatusModel.fromJson(json);
+    } catch (_) {
+      return null;
+    }
   }
 
   void _assertSuccess(Response<dynamic> response) {

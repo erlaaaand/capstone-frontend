@@ -19,13 +19,28 @@ class UserRepositoryImpl implements UserRepository {
   final UserRemoteDataSource _remote;
   final NetworkInfo _network;
 
+  User? _cachedUser;
+  DateTime? _lastFetchTime;
+
   @override
   Future<Either<Failure, User>> getMyProfile() async {
+    if (_cachedUser != null && _lastFetchTime != null) {
+      final difference = DateTime.now().difference(_lastFetchTime!);
+      if (difference.inMinutes < 15) {
+        return Right(_cachedUser!);
+      }
+    }
+
     if (!await _network.isConnected) return const Left(NoInternetFailure());
 
     try {
       final model = await _remote.getMyProfile();
-      return Right(model.toEntity());
+      final userEntity = model.toEntity();
+
+      _cachedUser = userEntity;
+      _lastFetchTime = DateTime.now();
+
+      return Right(userEntity);
     } on ServerException catch (e) {
       return Left(ErrorHandler.fromServerException(e));
     } on DioException catch (e) {
@@ -69,7 +84,13 @@ class UserRepositoryImpl implements UserRepository {
           newPassword: newPassword,
         ),
       );
-      return Right(model.toEntity());
+      
+      final updatedEntity = model.toEntity();
+
+      _cachedUser = updatedEntity;
+      _lastFetchTime = DateTime.now();
+
+      return Right(updatedEntity);
     } on ServerException catch (e) {
       return Left(ErrorHandler.fromServerException(e));
     } on DioException catch (e) {
@@ -77,5 +98,11 @@ class UserRepositoryImpl implements UserRepository {
     } catch (e) {
       return Left(ErrorHandler.fromUnknown(e));
     }
+  }
+
+  @override
+  void clearCache() {
+    _cachedUser = null;
+    _lastFetchTime = null;
   }
 }

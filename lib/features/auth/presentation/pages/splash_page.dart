@@ -102,7 +102,11 @@ class _SplashPageState extends State<SplashPage>
                     ],
                   ),
                   child: const Center(
-                    child: Text('🌿', style: TextStyle(fontSize: 52)),
+                    child: Icon(
+                      Icons.filter_center_focus_rounded,
+                      size: 56,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 28),

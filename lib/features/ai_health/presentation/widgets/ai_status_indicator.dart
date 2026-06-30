@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 
 enum AiStatusValue { online, offline, checking }
 
-/// Indikator dot kecil ONLINE/OFFLINE untuk ditempatkan di AppBar atau header.
 class AiStatusIndicator extends StatefulWidget {
   const AiStatusIndicator({
     super.key,
@@ -71,7 +70,6 @@ class _AiStatusIndicatorState extends State<AiStatusIndicator>
   Widget build(BuildContext context) => Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Dot beranimasi
           AnimatedBuilder(
             animation: _pulse,
             builder: (_, __) => Container(
